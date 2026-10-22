@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from researchrag.api.deps import get_ctx, require_paper, run_job
 from researchrag.evaluation import service
@@ -12,20 +12,20 @@ router = APIRouter(tags=["evaluation"])
 
 @router.get("/papers/{paper_id}/eval-datasets")
 def list_datasets(paper_id: str, ctx=Depends(get_ctx)):
-    require_paper(ctx, paper_id)
-    return {"datasets": service.list_datasets(ctx.settings)}
+    paper = require_paper(ctx, paper_id)
+    return {"datasets": service.list_datasets(ctx.settings, paper["file_sha256"])}
 
 
 @router.post("/papers/{paper_id}/evaluate", status_code=202)
 def evaluate_paper(
     paper_id: str,
     dataset: str | None = None,
-    k: int = 10,
+    k: int = Query(default=10, ge=1, le=100),
     ctx=Depends(get_ctx),
 ):
     """Run retrieval + answer metrics over an eval dataset (background job)."""
-    require_paper(ctx, paper_id)
-    names = service.list_datasets(ctx.settings)
+    paper = require_paper(ctx, paper_id)
+    names = service.list_datasets(ctx.settings, paper["file_sha256"])
     name = dataset or (names[0] if names else None)
     if not name or name not in names:
         raise HTTPException(
@@ -55,8 +55,8 @@ def list_experiments(paper_id: str, ctx=Depends(get_ctx)):
 @router.post("/papers/{paper_id}/experiments", status_code=202)
 def run_experiments(paper_id: str, ctx=Depends(get_ctx)):
     """Compare retrieval configurations (chunking × dense/sparse/hybrid × RRF × K)."""
-    require_paper(ctx, paper_id)
-    names = service.list_datasets(ctx.settings)
+    paper = require_paper(ctx, paper_id)
+    names = service.list_datasets(ctx.settings, paper["file_sha256"])
     if not names:
         raise HTTPException(
             status_code=404,

@@ -32,8 +32,13 @@ def dataset_dir(settings: Settings) -> Path:
     return d
 
 
-def list_datasets(settings: Settings) -> list[str]:
-    return sorted(p.name for p in dataset_dir(settings).glob("*.json"))
+def list_datasets(settings: Settings, paper_sha256: str | None = None) -> list[str]:
+    names = []
+    for path in dataset_dir(settings).glob("*.json"):
+        expected = json.loads(path.read_text(encoding="utf-8")).get("paper_sha256")
+        if paper_sha256 is None or not expected or expected == paper_sha256:
+            names.append(path.name)
+    return sorted(names)
 
 
 # ---------------------------------------------------------------------------
@@ -42,6 +47,8 @@ def list_datasets(settings: Settings) -> list[str]:
 
 def run_evaluation(ctx, paper_id: str, name: str, k: int = 10) -> dict:
     """Run retrieval + answer metrics over an eval dataset; persist an eval run."""
+    if name not in list_datasets(ctx.settings, ctx.db.get_paper(paper_id)["file_sha256"]):
+        raise ValueError("This evaluation dataset belongs to a different paper")
     ds = load_dataset(dataset_dir(ctx.settings) / name)
     from researchrag.models.chunk import Chunk
 
@@ -96,6 +103,9 @@ def run_evaluation(ctx, paper_id: str, name: str, k: int = 10) -> dict:
 def run_experiments(ctx, paper_id: str, name: str) -> dict:
     """Compare chunking × retrieval × RRF configurations (in-memory)."""
     import numpy as np
+
+    if name not in list_datasets(ctx.settings, ctx.db.get_paper(paper_id)["file_sha256"]):
+        raise ValueError("This evaluation dataset belongs to a different paper")
 
     from researchrag.chunking.fixed_size import FixedSizeChunker
     from researchrag.chunking.section_aware import SectionAwareChunker
