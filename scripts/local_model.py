@@ -68,7 +68,8 @@ def server_command(executable: Path, model: Path, alias: str, port: int, threads
             "--ctx-size", "4096", "--parallel", "1", "--n-gpu-layers", "0",
             "--threads", str(threads), "--threads-batch", str(threads),
             "--batch-size", "256", "--ubatch-size", "128", "--reasoning", "off",
-            "--cors-origins", "localhost"]
+            "--cors-origins", "localhost", "--presence-penalty", "2",
+            "--top-k", "20", "--top-p", "1", "--min-p", "0"]
 
 
 def main() -> None:
