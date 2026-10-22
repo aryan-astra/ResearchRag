@@ -288,7 +288,7 @@ class Database:
             for table in (
                 "blocks", "chunks", "spec_requirements", "runs",
                 "reproduction_records", "implementation_files",
-                "eval_runs",
+                "eval_runs", "experiments",
             ):
                 if table == "spec_requirements":
                     conn.execute(
@@ -306,6 +306,7 @@ class Database:
                     conn.execute(f"DELETE FROM {table} WHERE paper_id = ?", (paper_id,))
             conn.execute("DELETE FROM specs WHERE paper_id = ?", (paper_id,))
             conn.execute("DELETE FROM implementations WHERE paper_id = ?", (paper_id,))
+            conn.execute("DELETE FROM kv WHERE key IN (SELECT 'job_result:' || id FROM jobs WHERE paper_id = ?)", (paper_id,))
             conn.execute("DELETE FROM jobs WHERE paper_id = ?", (paper_id,))
             conn.execute("DELETE FROM papers WHERE id = ?", (paper_id,))
 

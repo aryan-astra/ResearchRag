@@ -81,6 +81,7 @@ class IngestionPipeline:
                 progress(p, detail)
 
         paper_id = paper_id or new_id("paper")
+        existing = self.db.get_paper(paper_id)
         self.db.upsert_paper(
             id=paper_id,
             filename=path.name,
@@ -88,7 +89,7 @@ class IngestionPipeline:
             authors_json="[]",
             abstract=None,
             page_count=0,
-            file_sha256="",
+            file_sha256=existing["file_sha256"] if existing else "",
             size_bytes=path.stat().st_size,
             source_path=str(path),
             parser=self.parser.name,
@@ -176,4 +177,10 @@ class IngestionPipeline:
             import shutil
 
             shutil.rmtree(artifacts, ignore_errors=True)
+        uploads_root = (self.settings.data_dir / "uploads").resolve()
+        uploads = (uploads_root / paper_id).resolve()
+        if uploads.is_relative_to(uploads_root) and uploads != uploads_root and uploads.exists():
+            import shutil
+
+            shutil.rmtree(uploads)
         log.info("removed paper %s", paper_id)

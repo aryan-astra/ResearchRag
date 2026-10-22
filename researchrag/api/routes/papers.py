@@ -51,7 +51,7 @@ async def upload_paper(file: UploadFile, ctx=Depends(get_ctx)):
     dup = ctx.db.query(
         "SELECT id, status FROM papers WHERE file_sha256 = ?", (sha,)
     )
-    if dup and dup[0]["status"] == "ready":
+    if any(row["status"] in ("ready", "queued", "processing") for row in dup):
         shutil.rmtree(uploads, ignore_errors=True)
         raise HTTPException(
             status_code=409,
@@ -106,6 +106,8 @@ def delete_paper(paper_id: str, ctx=Depends(get_ctx)):
     paper = require_paper(ctx, paper_id, ready=False)
     if paper["status"] in ("queued", "processing"):
         raise HTTPException(status_code=409, detail="Wait for ingestion to finish before deleting")
+    if ctx.db.query("SELECT id FROM jobs WHERE paper_id = ? AND status IN ('queued', 'running')", (paper_id,)):
+        raise HTTPException(status_code=409, detail="Wait for this paper's active jobs to finish before deleting")
     ctx.ingestion.remove_paper(paper_id)
     ctx.invalidate_retriever(paper_id)
 

@@ -24,3 +24,31 @@ def test_requirement_update_only_changes_requested_spec(tmp_path, notes):
     untouched = db.get_spec("spec_b")["requirements"][0]
     assert untouched["status"] == "open"
     assert untouched["notes"] == ""
+
+
+def test_deleting_paper_removes_experiments_and_job_results_only_for_that_paper(tmp_path):
+    from researchrag.storage.database import now_iso
+    db=Database(tmp_path/'state.db')
+    for paper in ['one','two']:
+        job=db.create_job(paper,'ingest')
+        db.kv_set('job_result:'+job,'result')
+        db.execute('INSERT INTO experiments (id,paper_id,name,kind,config_json,results_json,created_at) VALUES (?,?,?,?,?,?,?)',
+                   (paper,paper,'test','retrieval','{}','{}',now_iso()))
+    db.delete_paper('one')
+    assert len(db.query('SELECT * FROM experiments'))==1
+    assert db.query('SELECT * FROM experiments')[0]['paper_id']=='two'
+    assert len(db.query('SELECT * FROM kv'))==1
+
+
+def test_remove_paper_cleans_managed_upload_but_preserves_external_source(tmp_path):
+    from unittest.mock import Mock
+    from researchrag.config import Settings
+    from researchrag.ingestion.pipeline import IngestionPipeline
+    uploads=tmp_path/'uploads'/'one';uploads.mkdir(parents=True)
+    (uploads/'paper.pdf').write_bytes(b'PDF')
+    external=tmp_path/'original.pdf';external.write_bytes(b'PDF')
+    settings=Settings(data_dir=tmp_path)
+    pipeline=IngestionPipeline(settings,Mock(),Mock(),Mock(),Mock(),Mock())
+    pipeline.remove_paper('one')
+    assert not uploads.exists()
+    assert external.exists()
