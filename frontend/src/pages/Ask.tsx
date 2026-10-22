@@ -72,7 +72,7 @@ export default function Ask() {
         sub={
           isAdvanced
             ? "Advanced — tune retrieval, inspect timings, and copy raw answer JSON."
-            : "Answers come from the paper only — every sentence carries a page-level citation."
+            : "Answers use retrieved passages. Inspect the cited pages to check each claim."
         }
         right={
           <Link
@@ -117,7 +117,7 @@ export default function Ask() {
                 {showConfig ? "hide retrieval settings" : "retrieval settings"}
               </button>
             ) : (
-              <span className="text-xs text-ink-faint">Simplified — best settings chosen automatically</span>
+              <span className="text-xs text-ink-faint">Focus view · Using the workspace retrieval settings</span>
             )}
             <Button type="submit" busy={busy}>
               {busy ? "Assembling evidence…" : "Ask"}
