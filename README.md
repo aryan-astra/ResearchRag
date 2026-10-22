@@ -2,7 +2,7 @@
 
 Evidence-first platform for understanding research papers and turning them into working code — fully local, no cloud accounts required.
 
-Given a PDF, Research RAG parses it into a structured document (pages, sections, paragraphs, tables, formulas, figures — each with provenance), builds hierarchical semantic chunks, indexes them with hybrid dense + sparse (BM25) retrieval fused by Reciprocal Rank Fusion, reranks with a cross-encoder, and assembles a token-budgeted evidence package that grounds answers with page-level citations. It then derives an implementation specification in which every requirement carries a provenance tag (`EXPLICIT` / `INFERRED` / `EXTERNAL` / `UNKNOWN`) plus a verbatim source quote, generates a complete runnable project from that spec, executes it in a resource-limited sandbox, and compares produced metrics against the paper's reported values — reporting gaps as gaps instead of inventing numbers.
+Given a PDF, Research RAG parses it into a structured document (pages, sections, paragraphs, tables, formulas, figures — each with provenance), builds hierarchical semantic chunks, indexes them with hybrid dense + sparse (BM25) retrieval fused by Reciprocal Rank Fusion, reranks with a cross-encoder, and assembles a token-budgeted evidence package that grounds answers with page-level citations. It then derives an implementation specification in which every requirement carries a provenance tag (`EXPLICIT` / `INFERRED` / `EXTERNAL` / `UNKNOWN`) plus a verbatim source quote, generates a runnable implementation scaffold from that spec, executes it in a local subprocess runner, and compares produced metrics against the paper's reported values — reporting gaps as gaps instead of inventing numbers.
 
 ```
 PDF ─► parse ─► chunk ─► index ─► retrieve ─► fuse ─► rerank ─► assemble ─► answer
@@ -23,13 +23,17 @@ Default stack runs offline on a laptop: SQLite + embedded Qdrant + ONNX models (
 
 ---
 
+## Tested 8 GB CPU profile
+
+See [LOCAL_MODELS.md](LOCAL_MODELS.md) for the downloaded and tested Qwen3.5 2B GGUF model, measurements and limits. After the normal installation and frontend build, Windows x64 users can start the complete profile with `./scripts/serve-local.ps1`. The paper library includes a classic-paper shelf with local imports from arXiv.
+
 ## 1. Requirements
 
 For current publishing safeguards, see [SECURITY.md](SECURITY.md). API keys are optional and are entered at runtime; none are bundled. See [LOCAL_MODELS.md](LOCAL_MODELS.md) for low-end hardware and provider setup.
 
 | Dependency | Version | Notes |
 |---|---|---|
-| Python | ≥ 3.10 (tested 3.11) | `python -m venv .venv` |
+| Python | ≥ 3.10 (pinned lock/CI: 3.11; local tests: 3.13) | `python -m venv .venv` |
 | Node.js | ≥ 22.12 | For frontend build/development; the pinned Vite 8 toolchain requires a modern Node runtime. Production UI is served by the API from `frontend/dist` |
 | OS | Linux / macOS / Windows | Memory caps in the sandbox use `resource.setrlimit` on POSIX; on Windows they degrade to timeout + env scrubbing |
 
@@ -306,7 +310,7 @@ Routers: `papers`, `search` (chat/retrieve), `specs`, `implementations`, `evalua
 1. Provenance is retained (chunk block ids + page ranges, cited answer sentences, quoted EXPLICIT requirements — or explicit `unknown`). Generated answers still need source review.
 2. Pages are metadata, never chunk boundaries.
 3. Missing information is reported (open questions, `paper_value: null`, `null` config with comment, `insufficient` answers) — never fabricated.
-4. Generated code runs only in the sandbox.
+4. Review generated code before executing it locally. The subprocess runner is not host filesystem or network isolation; see SECURITY.md.
 5. RRF stays rank-based and configurable; retrieval changes go through the experiment framework.
 6. Same paper + same config → same chunk ids, BM25 index, rule-path spec (tests enforce determinism).
 

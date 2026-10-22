@@ -1,5 +1,7 @@
 # Project review — 22 October 2026
 
+The latest implementation and measured limitations are recorded in [VERIFICATION.md](VERIFICATION.md) and [LOCAL_MODELS.md](LOCAL_MODELS.md). Earlier measurements below describe prior checkpoints.
+
 ## What the platform does
 
 The React/TypeScript frontend calls the FastAPI API using relative `/api` URLs. Vite proxies those requests during development; the API serves `frontend/dist` in production. npm is the declared frontend package manager. The Python package has a CLI and an API that share an `AppContext` composition root.

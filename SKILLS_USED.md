@@ -19,3 +19,5 @@ Skills supply instructions and workflows. They do not guarantee lower token cost
 GSAP contexts and media-query listeners are reverted on navigation/unmount. Upload polling cancels timers on unmount. API keys are kept only in component state. This keeps animation, polling and credential lifetimes tied to the current interface.
 
 The algorithmic-art skill was also inspected for the ASCII studies. Its p5.js artifact workflow is unnecessary for this React feature: a small native text renderer implements the requested art without another rendering library. ART_DIRECTION.md records the conceptual direction.
+
+The follow-up also applied frontend-design, browser-qa and git-workflow-and-versioning. Current GSAP/FastEmbed APIs were checked with Context7. Browser inspection used Chrome DevTools for visual/a11y review and Playwright for repeatable route, breakpoint and injected-failure checks. Relevant tools were used; unrelated installed services were not activated. Subagents were stopped when the user requested no Astra subagents; subsequent work was performed directly.
