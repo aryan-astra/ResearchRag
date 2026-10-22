@@ -13,9 +13,12 @@ This records what was exercised, rather than claiming every PDF or model answer 
 
 ## Browser and interaction checks
 
+- Follow-up animation pass: the donut and pause controls are removed. Five updated ASCII tests verify complete notation, bounded label placement and movement. The production build passes.
+- `frontend/scripts/motion.browser.js` is a repeatable Playwright MCP check: pass its path to `browser_run_code_unsafe`'s `filename` argument with the preview running on port 8010. It passed 24 scroll positions across 1440px light/home, 1440px dark/gallery, 768px light/home and 375px dark/gallery, including reverse scrolling, folded flight, aligned reading stops and fully revealed final diagram items. It also checks final-frame reachability, horizontal overflow, all five gallery selections, runtime page errors, reduced-motion readability and animation cleanup after navigation. It supports populated and empty libraries.
+- This follow-up used Chromium browser automation and inspected saved screenshots. Native phone GPU performance, Firefox and Safari were not tested in this pass. Earlier Lighthouse scores below predate the animation redesign.
 - All 14 primary/list/paper routes plus specification and implementation detail views render. Normal navigation produced no JavaScript page errors.
 - Home, library, chat, settings and artwork were checked at 375, 768 and 1440 pixels. Paper, retrieval, evaluation and detail views received additional narrow-screen checks. Detected breadcrumb, filename and review-panel overflow was fixed.
-- Light/dark transitions, artwork pause, reduced motion, changing forms, moving LaTeX glyphs and the scroll-linked paper were exercised. The paper stays inside its section and lands separately from the diagram. No long task was observed in a short 1.2-second artwork observation; this is not a full performance benchmark.
+- The earlier pass exercised light/dark transitions, reduced motion, changing forms and scroll-linked paper. Its artwork pause control was subsequently removed at the user's request. No long task was observed in an earlier short 1.2-second artwork observation; this is not a full performance benchmark of the revised artwork.
 - Homepage and chat Lighthouse snapshots reached 100 accessibility and 100 best practices after fixing muted-text contrast. This is automated coverage, not a complete manual screen-reader audit. Optional agent-discovery manifests are not supplied for the local workspace.
 - Real imports completed for Attention Is All You Need, RAG, BERT, ResNet and GAN. PDFs remain in ignored app data with original source attribution.
 - API-key masking and lack of browser storage were checked with dummy values in the earlier pass. External provider calls were mocked.

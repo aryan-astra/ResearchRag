@@ -21,3 +21,5 @@ GSAP contexts and media-query listeners are reverted on navigation/unmount. Uplo
 The algorithmic-art skill was also inspected for the ASCII studies. Its p5.js artifact workflow is unnecessary for this React feature: a small native text renderer implements the requested art without another rendering library. ART_DIRECTION.md records the conceptual direction.
 
 The follow-up also applied frontend-design, browser-qa and git-workflow-and-versioning. Current GSAP/FastEmbed APIs were checked with Context7. Browser inspection used Chrome DevTools for visual/a11y review and Playwright for repeatable route, breakpoint and injected-failure checks. Relevant tools were used; unrelated installed services were not activated. Subagents were stopped when the user requested no Astra subagents; subsequent work was performed directly.
+
+The paper-flight revision also applied `animate`: explanatory motion, transform/opacity animation, reversible scrolling and a reduced-motion reading layout. The already installed GSAP ScrollTrigger and MotionPath plugins implement the requested flight without another dependency. Its replayable Chromium checks are recorded in VERIFICATION.md.

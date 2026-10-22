@@ -9,7 +9,7 @@ export default function SampleArt() {
   const option = ART_OPTIONS.find((art) => art.id === selected)!;
   return (
     <div className="art-gallery-page">
-      <div className="gallery-intro" data-enter><span className="workspace-eyebrow">ResearchRAG / visual studies</span><h1>A little science.<br /><em>A little wonder.</em></h1><p>Five moving sculptures, rendered in characters. Move your pointer to turn the form; look closer to find mathematics written into its surface.</p></div>
+      <div className="gallery-intro" data-enter><span className="workspace-eyebrow">ResearchRAG / visual studies</span><h1>A little science.<br /><em>A little wonder.</em></h1><p>Five moving sculptures, rendered in characters. Move your pointer to turn the form; look closer to find mathematics moving with it.</p></div>
       <section className="art-hero-preview" aria-label={`Hero preview: ${option.name}`}>
         <div className="art-hero-copy"><span>For the beautifully curious.</span><h2>Every paper holds<br />a new perspective.</h2><p>Ask better questions.<br />Follow the evidence.</p><Link to="/papers" className="art-hero-action">Explore your research <span aria-hidden>↗</span></Link></div>
         <div className="art-corner"><AsciiArt key={selected} kind={selected} /></div>
