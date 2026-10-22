@@ -14,7 +14,7 @@ export function PaperJourney() {
         const timeline = gsap.timeline({ scrollTrigger: { trigger: root.current, start: "top 80%", end: "clamp(bottom bottom)", scrub: .45, invalidateOnRefresh: true } });
         timeline.fromTo(".flying-sheet", { xPercent: 130, y: -70, rotate: -28, rotateY: 48, scale: .7 }, { xPercent: 0, y: 0, rotate: -2, rotateY: 0, scale: 1, duration: 1, ease: "power2.inOut" })
           .fromTo(".journey-word", { color: "#a99b80" }, { color: "#302c25", stagger: .1, duration: .2 }, .8)
-          .to(".flying-sheet", { x: () => Math.max(0, (root.current?.clientWidth ?? 800) - 410), y: 210, rotate: 8, rotateY: -24, duration: 1.3, ease: "power2.inOut" }, 2.7)
+          .to(".flying-sheet", { x: () => Math.max(0, (root.current?.clientWidth ?? 800) * .48 - 20), y: 170, rotate: 8, rotateY: -24, duration: 1.3, ease: "power2.inOut" }, 2.7)
           .to(".flying-sheet", { rotate: 1, rotateY: 0, duration: .6 }, 4)
           .fromTo(".journey-node", { y: 12 }, { y: 0, stagger: .15, duration: .4 }, 4);
       }, root);

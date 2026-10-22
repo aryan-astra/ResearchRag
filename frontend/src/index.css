@@ -304,7 +304,7 @@
   .flying-sheet code { font-size: 10px; color: #9f562e; }
   .sheet-page { position: absolute; bottom: 20px; left: 32px; font-size: 9px; color: #766c59; }
   .sheet-corner { position: absolute; top: 0; right: 0; width: 26px; height: 26px; border-radius: 0 26px 0 0; background: linear-gradient(45deg,#e5d9bf 48%,#fff8e4 50%); }
-  .journey-diagram { position: absolute; top: 10px; right: 8%; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; z-index: 2; }
+  .journey-diagram { position: absolute; top: 24px; right: 8%; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; z-index: 2; }
   .journey-node { min-width: 170px; border: 1px solid rgb(var(--c-line)); background: rgb(var(--c-card)); border-radius: 12px; padding: 16px 20px; font-size: 12px; }
   .journey-node small { display: block; font-size: 9px; margin-top: 6px; color: rgb(var(--c-ink-mute)); }
   .journey-diagram > span:not(.journey-node) { padding-left: 24px; color: rgb(var(--c-accent)); }
