@@ -310,6 +310,13 @@ class Database:
             conn.execute("DELETE FROM jobs WHERE paper_id = ?", (paper_id,))
             conn.execute("DELETE FROM papers WHERE id = ?", (paper_id,))
 
+    def recover_interrupted_jobs(self) -> None:
+        with self._conn() as conn:
+            conn.execute("UPDATE jobs SET status = 'failed', error = ?, finished_at = ? WHERE status IN ('queued', 'running')",
+                         ("The workspace restarted before this job completed. Start the operation again.", now_iso()))
+            conn.execute("UPDATE papers SET status = 'failed', error = ? WHERE status IN ('queued', 'processing')",
+                         ("Ingestion was interrupted by a restart. Upload the paper again.",))
+
     # ------------------------------------------------------------------
     # blocks
     def insert_blocks(self, paper_id: str, blocks) -> int:

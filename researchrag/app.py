@@ -64,6 +64,7 @@ class AppContext:
         self.settings = settings
         self.db = Database(settings.db_path)
         self.qdrant = QdrantStore(settings.qdrant_dir)
+        self.db.recover_interrupted_jobs()
         self.parser = build_parser(settings)
         self._embedder, self._embedder_fell_back = make_embedder(settings)
         self.qdrant.ensure_collection(self._embedder.dimension)

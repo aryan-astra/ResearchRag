@@ -52,3 +52,13 @@ def test_remove_paper_cleans_managed_upload_but_preserves_external_source(tmp_pa
     pipeline.remove_paper('one')
     assert not uploads.exists()
     assert external.exists()
+
+
+def test_restart_marks_only_unfinished_jobs_as_failed(tmp_path):
+    db=Database(tmp_path/'state.db')
+    pending=db.create_job('paper','ingest')
+    done=db.create_job('paper','evaluate');db.update_job(done,status='done',progress=1)
+    db.recover_interrupted_jobs()
+    assert db.get_job(pending)['status']=='failed'
+    assert 'restarted' in db.get_job(pending)['error']
+    assert db.get_job(done)['status']=='done'

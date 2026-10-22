@@ -17,7 +17,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from researchrag.api import deps  # noqa: F401  (ensures import order)
@@ -46,7 +46,7 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -72,6 +72,10 @@ def create_app() -> FastAPI:
     app.include_router(jobs.router, prefix="/api")
 
     # ---- frontend (static) ------------------------------------------------
+    @app.get("/robots.txt", include_in_schema=False, response_class=PlainTextResponse)
+    def robots():
+        return "User-agent: *\nDisallow: /\n"
+
     @app.get("/", include_in_schema=False)
     def index():
         dist = Path(__import__("researchrag").__file__).parent.parent / "frontend" / "dist"
