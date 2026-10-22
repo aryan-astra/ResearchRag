@@ -126,10 +126,10 @@ class HybridRetriever:
         rankings, weights = [], []
         if use_dense:
             rankings.append(dense_ranking)
-            weights.append(cfg.rrf_dense_weight or self.settings.rrf_dense_weight)
+            weights.append(cfg.rrf_dense_weight if cfg.rrf_dense_weight is not None else self.settings.rrf_dense_weight)
         if use_sparse:
             rankings.append(sparse_ranking)
-            weights.append(cfg.rrf_sparse_weight or self.settings.rrf_sparse_weight)
+            weights.append(cfg.rrf_sparse_weight if cfg.rrf_sparse_weight is not None else self.settings.rrf_sparse_weight)
 
         fused: list[RetrievedChunk] = []
         if cfg.use_rrf and len(rankings) >= 2:
@@ -149,15 +149,15 @@ class HybridRetriever:
                     )
                 )
         else:
-            # single-leg mode: keep that leg's order
-            order = dense_ranking if use_dense else (sparse_ranking if use_sparse else [])
+            # Concatenation preserves both legs without mixing incomparable raw scores.
+            order = list(dict.fromkeys(dense_ranking + sparse_ranking))
             for cid in order:
                 cand = candidates.get(cid)
                 if cand is None:
                     continue
                 score = (
                     cand.dense_score
-                    if use_dense
+                    if cand.dense_score is not None
                     else (cand.sparse_score if use_sparse else 0.0)
                 )
                 fused.append(

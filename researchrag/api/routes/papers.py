@@ -113,9 +113,9 @@ def delete_paper(paper_id: str, ctx=Depends(get_ctx)):
 @router.get("/papers/{paper_id}/structure")
 def paper_structure(paper_id: str, ctx=Depends(get_ctx)):
     """Page → block tree for the viewer and the section navigator."""
-    require_paper(ctx, paper_id)
+    paper = require_paper(ctx, paper_id)
     rows = ctx.db.get_blocks(paper_id)
-    pages: dict[int, dict] = {}
+    pages: dict[int, dict] = {number: {"number": number, "blocks": []} for number in range(1, paper["page_count"] + 1)}
     sections: list[dict] = []
     for r in rows:
         page = r["page"]

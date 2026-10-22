@@ -27,16 +27,16 @@ class RetrievedChunk(BaseModel):
 class RetrievalConfig(BaseModel):
     """Explicit per-request retrieval overrides (for experiments & tuning)."""
 
-    dense_top_n: int | None = None
-    sparse_top_n: int | None = None
-    rrf_k: int | None = None
-    rrf_dense_weight: float | None = None
-    rrf_sparse_weight: float | None = None
+    dense_top_n: int | None = Field(default=None, ge=1, le=1000)
+    sparse_top_n: int | None = Field(default=None, ge=1, le=1000)
+    rrf_k: int | None = Field(default=None, ge=1, le=1000)
+    rrf_dense_weight: float | None = Field(default=None, ge=0, le=100, allow_inf_nan=False)
+    rrf_sparse_weight: float | None = Field(default=None, ge=0, le=100, allow_inf_nan=False)
     use_dense: bool = True
     use_sparse: bool = True
     use_rrf: bool = True
-    reranker_top_m: int | None = None
-    final_top_k: int | None = None
+    reranker_top_m: int | None = Field(default=None, ge=1, le=1000)
+    final_top_k: int | None = Field(default=None, ge=1, le=100)
     use_reranker: bool = True
     use_parent_context: bool | None = None
 

@@ -67,6 +67,8 @@ def chat(paper_id: str, body: ChatRequest, ctx=Depends(get_ctx)):
 @router.post("/papers/{paper_id}/retrieve", response_model=RetrievalResult)
 def retrieve(paper_id: str, body: RetrieveRequest, ctx=Depends(get_ctx)):
     require_paper(ctx, paper_id)  # 404 guard
+    if not body.query.strip():
+        raise HTTPException(status_code=400, detail="Empty query")
     retriever = ctx.get_retriever(paper_id)
     try:
         return retriever.retrieve(body.query.strip(), paper_id, config=body.config)
