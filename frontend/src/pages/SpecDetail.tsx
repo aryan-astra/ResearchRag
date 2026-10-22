@@ -53,6 +53,7 @@ function SpecView({
   setFilter: (f: "all" | ReqStatus | "EXPLICIT" | "INFERRED") => void;
   reload: () => void;
 }) {
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const counts = useMemo(() => {
     const c = { EXPLICIT: 0, INFERRED: 0, EXTERNAL: 0, UNKNOWN: 0, total: spec.requirements.length };
     for (const r of spec.requirements) c[r.source.toUpperCase() as keyof typeof c] += 1;
@@ -68,12 +69,15 @@ function SpecView({
   });
 
   const setStatus = async (reqId: string, status: ReqStatus) => {
+    setUpdateError(null);
+    const previous = statusOverrides[reqId];
     setStatusOverrides((p) => ({ ...p, [reqId]: status }));
     try {
       await api.setRequirementStatus(spec.id, reqId, status);
       reload();
-    } catch {
-      /* optimistic update stands; error surfaces on reload */
+    } catch (error) {
+      setStatusOverrides((p) => { const next = { ...p }; if (previous) next[reqId] = previous; else delete next[reqId]; return next; });
+      setUpdateError((error as Error).message);
     }
   };
 
@@ -83,6 +87,7 @@ function SpecView({
 
   return (
     <>
+      {updateError && <ErrorNote message={updateError} />}
       <Breadcrumbs
         items={[
           { label: "Papers", to: "/papers" },

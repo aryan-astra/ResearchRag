@@ -37,14 +37,16 @@ export default function Evaluations() {
   );
   const [dataset, setDataset] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const job = useJob(jobId);
 
   const start = async () => {
+    setActionError(null);
     try {
       const { job_id } = await api.runEvaluation(paperId, dataset || undefined);
       setJobId(job_id);
-    } catch {
-      /* surfaced via job */
+    } catch (error) {
+      setActionError((error as Error).message);
     }
   };
 
@@ -66,6 +68,7 @@ export default function Evaluations() {
         right={
           <div className="flex items-center gap-2">
             <select
+              aria-label="Evaluation dataset"
               value={dataset}
               onChange={(e) => setDataset(e.target.value)}
               className="border border-line rounded-sm px-2.5 py-2 text-sm bg-card max-w-[16rem] cursor-pointer"
@@ -84,6 +87,7 @@ export default function Evaluations() {
         }
       />
 
+      {actionError && <ErrorNote message={actionError} />}
       {jobId && (
         <div className="mb-4">
           {done ? (
@@ -114,7 +118,7 @@ export default function Evaluations() {
           ) : (
             <Card>
               <div className="text-sm">
-                Scoring questions… {job?.detail ?? ""} ({Math.round(job?.progress ?? 0)}%)
+                Scoring questions… {job?.detail ?? ""} ({Math.round((job?.progress ?? 0) * 100)}%)
               </div>
               <div className="h-1 bg-panel rounded-full mt-3 overflow-hidden border border-line/60">
                 <div

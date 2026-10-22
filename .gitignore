@@ -32,3 +32,6 @@ frontend/vite.config.d.ts
 
 # Optional model weights are distributed as release assets.
 models/*.gguf
+
+# Browser verification output
+.playwright-mcp/

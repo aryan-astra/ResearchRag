@@ -38,7 +38,7 @@ export default function Implementations() {
     }
   };
 
-  const done = job && job.status !== "running";
+  const done = job && (job.status === "done" || job.status === "failed");
   return (
     <>
       <Breadcrumbs
@@ -66,7 +66,7 @@ export default function Implementations() {
                   </option>
                 ))}
               </select>
-              <Button onClick={generate} busy={job?.status === "running"}>
+              <Button onClick={generate} busy={!!jobId && (!job || job.status === "running" || job.status === "queued")}>
                 Generate project
               </Button>
             </div>
@@ -120,7 +120,7 @@ export default function Implementations() {
           ) : (
             <Card>
               <div className="text-sm">
-                Generating & validating… {job?.detail ?? ""} ({Math.round(job?.progress ?? 0)}%)
+                Generating & validating… {job?.detail ?? ""} ({Math.round((job?.progress ?? 0) * 100)}%)
               </div>
               <div className="h-1 bg-panel rounded-full mt-3 overflow-hidden border border-line/60">
                 <div

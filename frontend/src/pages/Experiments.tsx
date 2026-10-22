@@ -34,14 +34,16 @@ export default function Experiments() {
     [paperId]
   );
   const [jobId, setJobId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const job = useJob(jobId);
 
   const start = async () => {
+    setActionError(null);
     try {
       const { job_id } = await api.runExperiments(paperId);
       setJobId(job_id);
-    } catch {
-      /* surfaced via job */
+    } catch (error) {
+      setActionError((error as Error).message);
     }
   };
 
@@ -67,6 +69,7 @@ export default function Experiments() {
         }
       />
 
+      {actionError && <ErrorNote message={actionError} />}
       {jobId && (
         <div className="mb-4">
           {done ? (
@@ -97,7 +100,7 @@ export default function Experiments() {
           ) : (
             <Card>
               <div className="text-sm">
-                Sweeping configurations… {job?.detail ?? ""} ({Math.round(job?.progress ?? 0)}%)
+                Sweeping configurations… {job?.detail ?? ""} ({Math.round((job?.progress ?? 0) * 100)}%)
               </div>
               <div className="h-1 bg-panel rounded-full mt-3 overflow-hidden border border-line/60">
                 <div

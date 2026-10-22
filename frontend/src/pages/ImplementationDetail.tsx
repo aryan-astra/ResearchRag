@@ -28,6 +28,7 @@ export default function ImplementationDetail() {
   const [fileErr, setFileErr] = useState<string | null>(null);
   const [runJobId, setRunJobId] = useState<string | null>(null);
   const runJob = useJob(runJobId);
+  const [runError, setRunError] = useState<string | null>(null);
   const { data: runs } = useAsync(
     () =>
       impl
@@ -82,15 +83,16 @@ export default function ImplementationDetail() {
 
   const run = async (kind: (typeof RUN_KINDS)[number]) => {
     setRunJobId(null);
+    setRunError(null);
     try {
       const { job_id } = await api.runImplementation(impl.id, kind);
       setRunJobId(job_id);
-    } catch {
-      /* error surfaces via job state */
+    } catch (error) {
+      setRunError((error as Error).message);
     }
   };
 
-  const runDone = runJob && runJob.status !== "running";
+  const runDone = runJob && (runJob.status === "done" || runJob.status === "failed");
   const runOk = runJob?.status === "done";
 
   return (
@@ -137,13 +139,14 @@ export default function ImplementationDetail() {
         }
       />
 
+      {runError && <ErrorNote message={runError} />}
       {runJobId && !runDone && (
         <Card className="mb-5 animate-rise">
           <div className="text-sm">
             Running <strong>{runJob?.kind}</strong> in sandbox… {runJob?.detail ?? ""}
           </div>
           <div className="h-1 bg-panel rounded-full mt-3 overflow-hidden border border-line/60">
-            <div className="h-full bg-accent transition-all duration-300" style={{ width: `${runJob?.progress ?? 8}%` }} />
+            <div className="h-full bg-accent transition-all duration-300" style={{ width: `${(runJob?.progress ?? .08) * 100}%` }} />
           </div>
         </Card>
       )}

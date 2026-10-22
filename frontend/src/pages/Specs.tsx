@@ -33,7 +33,7 @@ export default function Specs() {
     }
   };
 
-  const done = job && job.status !== "running";
+  const done = job && (job.status === "done" || job.status === "failed");
   return (
     <>
       <Breadcrumbs
@@ -48,7 +48,7 @@ export default function Specs() {
         title="Specifications"
         sub="The bridge between paper and code: every requirement carries a type, a provenance tag (EXPLICIT / INFERRED / EXTERNAL / UNKNOWN), and a verbatim quote."
         right={
-          <Button onClick={generate} busy={job?.status === "running"}>
+          <Button onClick={generate} busy={!!jobId && (!job || job.status === "running" || job.status === "queued")}>
             Generate spec
           </Button>
         }
@@ -96,7 +96,7 @@ export default function Specs() {
           <Card>
             <div className="flex items-center justify-between">
               <span className="text-sm">
-                Building spec… {job?.detail ?? ""} ({Math.round(job?.progress ?? 0)}%)
+                Building spec… {job?.detail ?? ""} ({Math.round((job?.progress ?? 0) * 100)}%)
               </span>
             </div>
             <div className="h-1 bg-panel rounded-full mt-3 overflow-hidden border border-line/60">
