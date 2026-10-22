@@ -29,3 +29,6 @@ frontend/vite.config.d.ts
 .ruff_cache/
 .mypy_cache/
 *.egg-info/
+
+# Optional model weights are distributed as release assets.
+models/*.gguf

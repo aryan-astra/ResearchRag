@@ -1,0 +1,20 @@
+{
+  "model": {
+    "name": "Qwen3.5-0.8B-Q4_K_M.gguf",
+    "alias": "researchrag-local",
+    "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
+    "quantizer": "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF",
+    "url": "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0/Qwen3.5-0.8B-Q4_K_M.gguf",
+    "sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517",
+    "size": 532517120,
+    "license": "Apache-2.0"
+  },
+  "runtime": {
+    "name": "llama-b11669-bin-win-cpu-x64.zip",
+    "version": "b11669",
+    "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11669/llama-b11669-bin-win-cpu-x64.zip",
+    "sha256": "37b3efcf962847ca869745fd4ccf7f5e7e8dacfeff9fa3523b4ca8cdc66d632b",
+    "size": 19537886,
+    "license": "MIT"
+  }
+}
