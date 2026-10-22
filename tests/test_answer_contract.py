@@ -39,3 +39,16 @@ def test_unknown_classification_text_is_hidden_without_inventing_confidence():
     assert clean=='A sourced answer [1].'
     assert confidence is None
     assert sufficiency=='sufficient'
+
+
+def test_bold_metadata_is_parsed_and_removed():
+    from researchrag.answering.prompts import strip_markers
+    clean,confidence,sufficiency=strip_markers('An answer [1].\n**Confidence:** weakly_inferred\n**SUFFICIENCY:** insufficient')
+    assert clean=='An answer [1].'
+    assert confidence=='weakly_inferred'
+    assert sufficiency=='insufficient'
+
+
+def test_model_admitted_weak_answers_fall_back_to_sources():
+    answerer,package=pipeline('Six layers [1].\n**Confidence:** weakly_inferred\n**SUFFICIENCY:** insufficient')
+    assert answerer._llm_answer('How many layers?',package,None).mode=='extractive'

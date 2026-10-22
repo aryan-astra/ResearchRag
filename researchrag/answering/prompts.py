@@ -34,6 +34,7 @@ _SUFF_RE = _re.compile(
 
 def strip_markers(text: str) -> tuple[str, str | None, str | None]:
     """Remove the trailing classification lines; return (clean, conf, suff)."""
+    text = _re.sub(r"(?im)^\s*\*{0,2}(CONFIDENCE|SUFFICIENCY)\*{0,2}\s*:\*{0,2}\s*", r"\1: ", text)
     conf_m = _CONF_RE.search(text)
     suff_m = _SUFF_RE.search(text)
     clean = _re.sub(r"(?im)^\s*(?:CONFIDENCE|SUFFICIENCY)\s*:[^\n]*(?:\n|$)", "", text)
