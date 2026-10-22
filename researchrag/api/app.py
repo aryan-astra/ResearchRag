@@ -21,7 +21,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from researchrag.api import deps  # noqa: F401  (ensures import order)
-from researchrag.api.routes import evaluation, implementations, jobs, papers, search, specs
+from researchrag.api.routes import evaluation, implementations, jobs, papers, samples, search, specs
 from researchrag.app import get_app_context
 
 log = logging.getLogger(__name__)
@@ -64,6 +64,7 @@ def create_app() -> FastAPI:
 
     # ---- routers ---------------------------------------------------------
     app.include_router(papers.router, prefix="/api")
+    app.include_router(samples.router, prefix="/api")
     app.include_router(search.router, prefix="/api")
     app.include_router(specs.router, prefix="/api")
     app.include_router(implementations.router, prefix="/api")

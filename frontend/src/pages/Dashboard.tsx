@@ -27,6 +27,7 @@ export default function Dashboard() {
           </article>)}</div>
         ) : <div className="library-first"><span aria-hidden>↖</span><p>A clear starting point.<small>Add your first paper above. Your reading and research will live here.</small></p></div>}
       </section>
+      <p className="classic-invitation">Looking for somewhere to begin? <Link to="/papers#samples">Explore the papers that changed the field ↗</Link></p>
       <PaperJourney />
       <footer className="overview-footer"><span>Your ideas stay in your workspace.</span><Link to="/health">Configure an AI model ↗</Link></footer>
     </div>

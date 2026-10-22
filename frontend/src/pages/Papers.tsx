@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useAsync, fmtDate } from "../hooks";
 import { Badge, Button, Empty, ErrorNote, PageHeader, Skeleton } from "../components/ui";
 import { UploadPaper } from "../components/UploadPaper";
+import { SamplePapers } from "../components/SamplePapers";
 import type { Paper } from "../types";
 
 export default function Papers() {
@@ -42,6 +43,7 @@ export default function Papers() {
         {deleteError && <ErrorNote message={deleteError} />}
         <div><Button kind="ghost" disabled={deleting} onClick={() => dialog.current?.close()}>Keep paper</Button><Button kind="danger" busy={deleting} onClick={() => void remove()}>Delete paper</Button></div>
       </dialog>
+      <div id="samples"><SamplePapers onComplete={reload} /></div>
     </div>
   );
 }

@@ -35,6 +35,11 @@ export interface ChatModelOptions {
   api_key?: string;
 }
 
+export interface SamplePaper {
+  id: string; title: string; authors: string; year: number; description: string;
+  question: string; source_url: string; paper_id: string | null;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
@@ -66,6 +71,8 @@ export const api = {
   health: () => get<Health>("/api/health"),
 
   // papers
+  samples: () => get<{ samples: SamplePaper[] }>("/api/samples").then(r => r.samples),
+  importSample: (id: string) => post<{ paper_id: string; job_id: string | null; status: string }>(`/api/samples/${id}/import`),
   listPapers: () => get<{ papers: Paper[] }>("/api/papers").then((r) => r.papers),
   getPaper: (id: string) => get<Paper>(`/api/papers/${id}`),
   structure: (id: string) => get<PaperStructure>(`/api/papers/${id}/structure`),
