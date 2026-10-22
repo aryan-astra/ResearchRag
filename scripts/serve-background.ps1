@@ -20,7 +20,7 @@ $root = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
 $venvPython = Join-Path $root ".venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $venvPython)) { $venvPython = "python" }
 
-$busy = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Select-Object -First 1
+$busy = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($busy) {
   Write-Output "Port $Port is already in use (PID $($busy.OwningProcess)). Reusing it - is the API already running?"
 } else {
