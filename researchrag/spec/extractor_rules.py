@@ -24,7 +24,7 @@ from researchrag.models.retrieval import (
     SourceKind,
     SpecRequirement,
 )
-from researchrag.storage.database import now_iso
+from researchrag.storage.database import new_id, now_iso
 
 
 class _Rule:
@@ -50,10 +50,10 @@ class _Rule:
 
 RULES: list[_Rule] = [
     _Rule(
-        r"(?:learning rate|lr)\D{0,24}?(?:of|was|is|:|,)?\s*(\d[.]?\d*[eE][\-+]\d{1,2}|\d+[\.,]\d*)",
+        r"(?:learning rate|\blr\b)\s*(?:of|was|is|:|=|to)?\s*(\d+(?:[.,]\d+)?(?:[eE][\-+]?\d+)?)(?!\w|\.\d)",
         RequirementType.HYPERPARAMETER,
         "Learning rate: {v}",
-        "Set the optimizer's learning rate to this value (verify scale: 1e-5 style is typical for BERT fine-tuning).",
+        "Use the stated learning rate; verify its units and whether a schedule is specified.",
         group=1,
     ),
     _Rule(
@@ -63,21 +63,21 @@ RULES: list[_Rule] = [
         "Instantiate the named optimizer.",
     ),
     _Rule(
-        r"(?:weight decay)\D{0,20}?(?:of|:|,)?\s*(\d+[\.,]\d*)",
+        r"weight decay\s*(?:of|was|is|:|=)?\s*(\d+(?:[.,]\d+)?)(?!\w|\.\d)",
         RequirementType.HYPERPARAMETER,
         "Weight decay: {v}",
         "Apply weight decay with this coefficient (often excluded for bias/LayerNorm).",
         group=1,
     ),
     _Rule(
-        r"(?:batch size|batch-size)\D{0,24}?(?:of|:|,)?\s*(\d+)",
+        r"(?:batch size|batch-size)\s*(?:of|was|is|:|=)?\s*(\d+)\b",
         RequirementType.HYPERPARAMETER,
         "Batch size: {v}",
         "Train with this per-device (or global — read surrounding text) batch size.",
         group=1,
     ),
     _Rule(
-        r"(?:warm[ -]?up|warmup)\D{0,28}?(?:of|:|,)?\s*(\d{1,5})",
+        r"warm[ _-]?up(?:[ _-]?steps)?\s*(?:of|was|is|:|=|for)?\s*(\d{1,7})(?!\d|\.\d)",
         RequirementType.HYPERPARAMETER,
         "Warmup: {v} steps",
         "Linearly warm up the learning rate for this many steps.",
@@ -98,7 +98,7 @@ RULES: list[_Rule] = [
         group=1,
     ),
     _Rule(
-        r"(?:dropout|drop-out)\D{0,20}?(?:of|:|,)?\s*(\d+[\.,]?\d*)",
+        r"(?:dropout|drop-out)(?:\s+(?:rate|probability))?\s*(?:of|was|is|:|=)?\s*(0(?:[.,]\d+)?|1(?:[.,]0+)?)(?!\d|\.\d)",
         RequirementType.HYPERPARAMETER,
         "Dropout: {v}",
         "Apply dropout with this rate.",
@@ -183,7 +183,7 @@ RULES: list[_Rule] = [
         "Use this approximate nearest-neighbor index for MIPS.",
     ),
     _Rule(
-        r"beam (?:search|size)\D{0,20}?(?:of|:|,)?\s*(\d+)",
+        r"beam size\s*(?:of|was|is|:|=)?\s*(\d+)\b",
         RequirementType.INFERENCE,
         "Beam size: {v}",
         "Decode with this beam width.",
@@ -203,6 +203,8 @@ def extract_requirements(
     seen: set[tuple[str, str]] = set()
 
     for chunk_id, text, section_path, page, chunk_type in evidence_texts:
+        if any(section.strip().lower() in ("references", "bibliography") for section in section_path):
+            continue
         for rule in RULES:
             m = rule.match(text)
             if not m:
@@ -237,7 +239,7 @@ def extract_requirements(
             break
 
     return ImplementationSpec(
-        id=f"spec_{paper_id[-6:]}_rules",
+        id=new_id("spec"),
         paper_id=paper_id,
         title=f"Implementation specification — {paper_title or paper_id}",
         summary=(

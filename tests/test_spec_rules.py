@@ -96,3 +96,18 @@ def test_spec_metadata():
     assert "My Paper" in spec.title
     assert spec.generated_by == "rule-extractor v1"
     assert spec.open_questions  # gaps are always reported
+
+
+def test_citations_exponents_and_bibliography_are_not_hyperparameters():
+    evidence=[('bad','We apply dropout [33]. Adjust learning rates and beam size on the Section 22 development set. The learning rate is d^-0.5; warmup_steps^-1.5.', ['Methods'],1,'text'),
+              ('refs','Learning rate of 2015. Adam optimizer.', ['References'],2,'text')]
+    spec=extract_requirements('p','Title',evidence)
+    assert not spec.requirements
+
+
+def test_explicit_settings_and_regeneration_keep_precise_values_and_new_identity():
+    evidence=[('good','Learning rate of 1e-4. Warmup_steps = 4000. Dropout rate of 0.1. Beam size of 4.', ['Training'],1,'text')]
+    first=extract_requirements('p','Title',evidence);second=extract_requirements('p','Title',evidence)
+    text=' '.join(r.requirement for r in first.requirements)
+    assert all(value in text for value in ['1e-4','4000','0.1','Beam size: 4'])
+    assert first.id!=second.id
