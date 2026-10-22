@@ -17,7 +17,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`bg-card border border-line shadow-card rounded-sm ${
+      className={`surface-card bg-card border border-line rounded-lg ${
         pad ? "p-5" : ""
       } ${className}`}
     >
@@ -38,10 +38,10 @@ export function PageHeader({
   right?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 animate-rise">
+    <div data-enter className="page-header flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
       <div className="min-w-0">
         {kicker && (
-          <div className="text-[11px] uppercase tracking-[0.18em] text-ink-faint mb-2 font-medium">
+          <div className="page-kicker text-xs text-ink-mute mb-2 font-medium">
             {kicker}
           </div>
         )}
@@ -83,7 +83,8 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled || busy}
-      className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-sm transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed ${styles[kind]}`}
+      aria-busy={busy || undefined}
+      className={`product-button inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed ${styles[kind]}`}
     >
       {busy && <Spinner small />}
       {children}
@@ -119,7 +120,7 @@ export function Badge({
   } as const;
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide rounded-sm border ${tones[tone]}`}
+      className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md border ${tones[tone]}`}
     >
       {children}
     </span>
@@ -175,10 +176,10 @@ export function Stagger({
 }
 
 /** Explicit status wording: primary word for everyone, private detail for advanced. */
-export function embedderStatus(fallback: boolean): { primary: string; detail: string; tone: "warn" | "ok" } {
-  return fallback
+export function embedderStatus(fallback: boolean, model: string): { primary: string; detail: string; tone: "warn" | "ok" } {
+  return fallback || model.startsWith("hashing")
     ? { primary: "Offline", detail: "Hashing", tone: "warn" }
-    : { primary: "Live", detail: "ONNX", tone: "ok" };
+    : { primary: "Local", detail: "ONNX", tone: "ok" };
 }
 
 export function Empty({ title, hint }: { title: string; hint?: ReactNode }) {
@@ -192,7 +193,7 @@ export function Empty({ title, hint }: { title: string; hint?: ReactNode }) {
 
 export function ErrorNote({ message }: { message: string }) {
   return (
-    <div className="border border-danger/30 bg-danger-soft rounded-sm px-4 py-3 text-sm text-danger animate-rise">
+    <div role="alert" className="border border-danger/30 bg-danger-soft rounded-lg px-4 py-3 text-sm text-danger">
       {message}
     </div>
   );
@@ -250,12 +251,23 @@ export function Tabs({
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="flex gap-1 border-b border-line mb-6" role="tablist">
+    <div className="flex gap-1 border-b border-line mb-6 overflow-x-auto" role="tablist" aria-label="Workspace views"
+      onKeyDown={(event) => {
+        const index = tabs.findIndex((t) => t.id === active);
+        const next = event.key === "ArrowRight" ? (index + 1) % tabs.length
+          : event.key === "ArrowLeft" ? (index - 1 + tabs.length) % tabs.length
+          : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : -1;
+        if (next < 0) return;
+        event.preventDefault();
+        onChange(tabs[next].id);
+        event.currentTarget.querySelectorAll<HTMLButtonElement>("[role=tab]")[next]?.focus();
+      }}>
       {tabs.map((t) => (
         <button
           key={t.id}
           role="tab"
           aria-selected={active === t.id}
+          tabIndex={active === t.id ? 0 : -1}
           onClick={() => onChange(t.id)}
           className={`px-4 py-2.5 text-sm -mb-px border-b-2 transition-colors cursor-pointer ${
             active === t.id

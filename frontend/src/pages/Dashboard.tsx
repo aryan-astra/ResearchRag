@@ -1,139 +1,29 @@
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAsync, fmtDate } from "../hooks";
-import { useViewMode } from "../view";
-import { Card, PageHeader, Stat, Badge, Empty, ErrorNote, Skeleton, Stagger, StatusDot, embedderStatus } from "../components/ui";
+import { ErrorNote, Skeleton, Badge } from "../components/ui";
+import { UploadPaper } from "../components/UploadPaper";
 
 export default function Dashboard() {
-  const { data: health, error: hErr } = useAsync(() => api.health(), []);
-  const { data: papers, loading, error } = useAsync(() => api.listPapers(), []);
-  const { isAdvanced } = useViewMode();
-
-  if (hErr)
-    return <ErrorNote message={`Cannot reach the API: ${hErr}. Start it with “researchrag serve”.`} />;
-  if (loading || !health) {
-    return (
-      <>
-        <PageHeader kicker="Overview" title="Dashboard" sub="Loading your evidence-first workspace…" />
-        <Card>
-          <Skeleton lines={4} />
-        </Card>
-      </>
-    );
-  }
-
+  const { data: papers, loading, error, reload } = useAsync(() => api.listPapers(), []);
   const ready = (papers ?? []).filter((p) => p.status === "ready");
-  const working = (papers ?? []).filter((p) => p.status === "queued");
-  const emb = embedderStatus(health.embedding_fallback);
-  const llmOffline = health.llm === "offline";
-
+  const recent = ready.slice(0, 4);
   return (
-    <>
-      <PageHeader
-        kicker="Overview"
-        title="Dashboard"
-        sub={
-          isAdvanced
-            ? "Advanced — papers, live engine detail, and per-paper provenance."
-            : "Ask questions, get cited answers, and turn papers into code."
-        }
-      />
-      {error && <div className="mb-6"><ErrorNote message={error} /></div>}
-
-      <Stagger step={55} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card className="transition-shadow duration-200 hover:shadow-lift">
-          <Stat label="Papers" value={ready.length} sub={`${working.length} processing`} />
-        </Card>
-        <Card className="transition-shadow duration-200 hover:shadow-lift">
-          <Stat
-            label="Embedder"
-            value={
-              <span className="flex items-center gap-2 text-xl">
-                <StatusDot tone={emb.tone} />
-                <span className={emb.tone === "warn" ? "text-warn" : "text-ok"}>
-                  {emb.primary} ({emb.detail.toLowerCase()})
-                </span>
-              </span>
-            }
-            sub={health.embedding_model}
-          />
-        </Card>
-        <Card className="transition-shadow duration-200 hover:shadow-lift">
-          <Stat
-            label="Reranker"
-            value={<span className="text-xl">{health.reranker === "local" ? "Local" : health.reranker}</span>}
-            sub={isAdvanced ? String((health.settings as Record<string, unknown>)["reranker_model"] ?? "") : "cross-encoder"}
-          />
-        </Card>
-        <Card className="transition-shadow duration-200 hover:shadow-lift">
-          <Stat
-            label="LLM"
-            value={
-              <span className="flex items-center gap-2 text-xl">
-                <StatusDot tone={llmOffline ? "warn" : "ok"} />
-                {llmOffline ? "Offline" : health.llm}
-              </span>
-            }
-            sub={llmOffline ? "extractive answering" : undefined}
-          />
-        </Card>
-      </Stagger>
-
-      {isAdvanced && (
-        <div className="flex flex-wrap items-center gap-2 mb-8 animate-fadein">
-          <Badge tone={emb.tone}>embedder: {emb.primary}</Badge>
-          <Badge tone="neutral">private: {emb.detail}</Badge>
-          <Badge tone={llmOffline ? "warn" : "ok"}>llm: {llmOffline ? "Offline" : health.llm}</Badge>
-          <Badge tone="neutral">chunking: {health.chunk_strategy}</Badge>
-          <Badge tone="neutral">parser: {health.parser}</Badge>
-        </div>
-      )}
-
-      <div className="flex items-baseline justify-between mb-3">
-        <h2 className="font-display text-xl">Papers</h2>
-        <Link to="/papers" className="text-sm text-accent hover:underline">
-          Open library →
-        </Link>
-      </div>
-      {(papers ?? []).length === 0 ? (
-        <Empty
-          title="No papers ingested yet"
-          hint={
-            <>
-              Upload a PDF in the <Link to="/papers" className="text-accent underline">library</Link>,
-              or from the CLI: <code className="font-mono">researchrag ingest paper.pdf</code>
-            </>
-          }
-        />
-      ) : (
-        <Stagger step={60} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(papers ?? []).map((p) => (
-            <Link key={p.id} to={`/papers/${p.id}`} className="group focus:outline-none">
-              <Card className="h-full transition-all duration-200 hover:shadow-lift hover:-translate-y-[1px] group-hover:border-accent/40 group-focus-visible:ring-2 group-focus-visible:ring-accent/60">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="font-display text-lg leading-snug break-words">
-                      {p.title || p.filename}
-                    </div>
-                    <div className="text-xs text-ink-faint mt-1">
-                      {p.page_count > 0 ? `${p.page_count} pages · ` : ""}
-                      {fmtDate(p.created_at)}
-                      {isAdvanced ? ` · ${p.parser ?? "pymupdf"} · ${p.id}` : ""}
-                    </div>
-                  </div>
-                  <Badge
-                    tone={
-                      p.status === "ready" ? "ok" : p.status === "failed" ? "danger" : "warn"
-                    }
-                  >
-                    {p.status}
-                  </Badge>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </Stagger>
-      )}
-    </>
+    <div className="overview-page">
+      <div className="overview-heading research-hero" data-enter><div><span className="workspace-eyebrow">For the beautifully curious.</span><h1>Every paper holds<br /><em>a new perspective.</em></h1><p>Bring a question. Find the evidence.<br className="hidden sm:block" /> Make something of what you discover.</p></div><Link to="/sample-art" className="hero-art-invitation"><span className="art-invitation-mark" aria-hidden>∑<small>α · λ · π</small></span><span>Explore five ASCII studies ↗</span></Link></div>
+      <div data-enter><UploadPaper onComplete={reload} compact /></div>
+      <section className="recent-section" data-enter>
+        <div className="section-heading"><h2>Your library <span>{ready.length}</span></h2><Link to="/papers">View all papers <span aria-hidden>↗</span></Link></div>
+        {error ? <ErrorNote message={error} /> : loading ? <div className="paper-grid"><Skeleton lines={4} /><Skeleton lines={4} /></div> : recent.length ? (
+          <div className="paper-grid">{recent.map((p) => <article className="paper-tile" key={p.id}>
+            <Link to={`/papers/${p.id}`} className="paper-cover" tabIndex={-1} aria-hidden="true"><span className="paper-cover-back" /><div className="paper-cover-sheet"><img src={`/api/papers/${p.id}/pages/1/image?dpi=36`} alt="" loading="lazy" /><span className="paper-format">PDF</span></div></Link>
+            <div className="paper-tile-meta"><span>{p.page_count} pages</span><Badge tone="ok">Ready</Badge></div>
+            <h3><Link to={`/papers/${p.id}`}>{p.title || p.filename}</Link></h3><p>Added {fmtDate(p.created_at)}</p>
+            <Link to={`/papers/${p.id}/ask`} className="paper-ask">Ask this paper <span aria-hidden>↗</span></Link>
+          </article>)}</div>
+        ) : <div className="library-first"><span aria-hidden>↖</span><p>A clear starting point.<small>Add your first paper above. Your reading and research will live here.</small></p></div>}
+      </section>
+      <footer className="overview-footer"><span>Your ideas stay in your workspace.</span><Link to="/health">Configure an AI model ↗</Link></footer>
+    </div>
   );
 }

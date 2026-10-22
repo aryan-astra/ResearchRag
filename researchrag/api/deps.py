@@ -18,11 +18,11 @@ def get_ctx(request: Request) -> AppContext:
     return request.app.state.ctx
 
 
-def require_paper(ctx: AppContext, paper_id: str) -> dict:
+def require_paper(ctx: AppContext, paper_id: str, *, ready: bool = True) -> dict:
     paper = ctx.db.get_paper(paper_id)
     if paper is None:
         raise HTTPException(status_code=404, detail=f"Paper {paper_id} not found")
-    if paper.get("status") != "ready":
+    if ready and paper.get("status") != "ready":
         raise HTTPException(
             status_code=409,
             detail=f"Paper is not ready (status={paper.get('status')}, error={paper.get('error')})",
@@ -40,11 +40,11 @@ def run_job(ctx: AppContext, job_id: str, fn, *args, **kwargs) -> None:
             if accepts_progress:
                 kwargs["progress"] = lambda p, d: ctx.db.update_job(job_id, progress=p, detail=d)
             result = fn(*args, **kwargs)
-            ctx.db.update_job(job_id, status="done", progress=1.0, detail="complete")
             if isinstance(result, dict):
                 import json
 
                 ctx.db.kv_set(f"job_result:{job_id}", json.dumps(result, default=str))
+            ctx.db.update_job(job_id, status="done", progress=1.0, detail="complete")
         except Exception as e:
             log.exception("job %s failed", job_id)
             ctx.db.update_job(job_id, status="failed", error=f"{type(e).__name__}: {e}")

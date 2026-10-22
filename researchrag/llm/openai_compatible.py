@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import time
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -37,7 +38,10 @@ class OpenAICompatibleLLM(BaseLLM):
         self.name = f"openai_compatible/{model}"
 
     def is_online(self) -> bool:
-        if not self.api_key and self.base_url.startswith("http://localhost"):
+        endpoint = urlsplit(self.base_url)
+        if endpoint.scheme in ("http", "https") and endpoint.hostname in (
+            "localhost", "127.0.0.1", "::1"
+        ):
             return True  # local servers don't need keys
         return bool(self.api_key)
 
@@ -66,30 +70,34 @@ class OpenAICompatibleLLM(BaseLLM):
                     resp = client.post(url, json=body, headers=headers)
                 dt = (time.perf_counter() - t0) * 1000
                 if resp.status_code >= 500 or resp.status_code == 429:
-                    last_error = LLMError(f"HTTP {resp.status_code}: {resp.text[:300]}")
+                    last_error = LLMError(f"HTTP {resp.status_code}")
                     log.warning("LLM attempt %d failed: %s", attempt + 1, last_error)
                     time.sleep(min(2 ** attempt, 8))
                     continue
                 if resp.status_code >= 400:
                     raise LLMError(
-                        f"LLM request failed (HTTP {resp.status_code}): "
-                        f"{resp.text[:500]}"
+                        f"LLM request failed (HTTP {resp.status_code})"
                     )
-                data = resp.json()
-                choice = data["choices"][0]
-                text = choice["message"]["content"] or ""
+                try:
+                    data = resp.json()
+                    choice = data["choices"][0]
+                    text = choice["message"]["content"]
+                    if not isinstance(text, str) or not text.strip():
+                        raise ValueError("Empty completion")
+                except (ValueError, KeyError, IndexError, TypeError) as e:
+                    raise LLMError("LLM returned no usable text") from e
                 usage = data.get("usage") or {}
                 log.info(
                     "LLM: %dms, %d completion tokens (model=%s)",
                     dt,
-                    usage.get("completion_tokens"),
+                    usage.get("completion_tokens") or 0,
                     self.model,
                 )
                 return LLMResponse(
                     text=text,
                     model=data.get("model", self.model),
-                    tokens_used=usage.get("completion_tokens")
-                    + usage.get("prompt_tokens"),
+                    tokens_used=(usage.get("completion_tokens") or 0)
+                    + (usage.get("prompt_tokens") or 0),
                     finish_reason=choice.get("finish_reason"),
                     raw=data,
                 )

@@ -97,10 +97,7 @@ def validate_project(root: Path, python: str | None = None, timeout_s: int = 120
     if result.ok:
         result.stages.extend(_run_checks(root, python or sys.executable, timeout_s))
         if not all(s.status == "passed" for s in result.stages if s.name in ("tests", "smoke")):
-            result.ok = any(s.status == "failed" for s in result.stages)
-            # tests failing means not ok
-            if result.stage("tests") and result.stage("tests").status == "failed":
-                result.ok = False
+            result.ok = False
             for s in result.stages:
                 if s.status == "failed":
                     errors.append(f"[{s.name}] {s.detail}")

@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { flushSync } from "react-dom";
 
 type Theme = "light" | "dark";
 const STORAGE_KEY = "rr-theme";
@@ -11,7 +12,7 @@ function initialTheme(): Theme {
   } catch {
     /* private mode — fall through to OS preference */
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "light";
 }
 
 const ThemeContext = createContext<{ dark: boolean; toggle: () => void }>({
@@ -21,6 +22,7 @@ const ThemeContext = createContext<{ dark: boolean; toggle: () => void }>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(initialTheme);
+  const transition = useRef<ViewTransition | null>(null);
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     try {
@@ -29,7 +31,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
   }, [theme]);
-  const toggle = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
+  const toggle = useCallback(() => {
+    const change = () => flushSync(() => setTheme(t => t === "dark" ? "light" : "dark"));
+    transition.current?.skipTransition();
+    if (!document.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      change(); return;
+    }
+    const next = document.startViewTransition(change);
+    transition.current = next;
+    void next.ready.then(() => {
+      document.documentElement.animate({ clipPath: [
+        "polygon(100% 0,100% 0,100% 100%,100% 100%)",
+        "polygon(65% 0,100% 0,100% 100%,45% 100%)",
+        "polygon(0 0,100% 0,100% 100%,0 100%)",
+      ] }, { duration: 650, easing: "cubic-bezier(.22,1,.36,1)", pseudoElement: "::view-transition-new(root)" });
+    }).catch(() => { /* A newer toggle can supersede an unfinished transition. */ });
+  }, []);
+  useEffect(() => () => transition.current?.skipTransition(), []);
   return <ThemeContext.Provider value={{ dark: theme === "dark", toggle }}>{children}</ThemeContext.Provider>;
 }
 
@@ -47,7 +65,7 @@ export function ThemeToggle() {
       aria-pressed={dark}
       aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
       title={dark ? "Light theme" : "Dark theme"}
-      className="inline-flex items-center justify-center h-8 w-8 rounded-sm border border-line text-ink-mute hover:text-ink hover:bg-panel transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+      className={`theme-toggle ${dark ? "is-dark" : ""}`}
     >
       {dark ? (
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>

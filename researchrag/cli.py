@@ -355,6 +355,8 @@ def cmd_run(args) -> int:
             cmd = [sys.executable, "tests/test_smoke.py"]
         extra = {}
 
+    extra["PYTHONPATH"] = str(project_dir / "src")
+
     log_path = project_dir / "logs" / f"run_{new_id('run')[-6:]}.log"
     result = run_command(
         cmd,

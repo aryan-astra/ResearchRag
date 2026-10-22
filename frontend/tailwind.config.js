@@ -42,9 +42,9 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Georgia', '"Iowan Old Style"', '"Times New Roman"', "serif"],
+        display: ['"Manrope Variable"', '"Aptos Display"', '"Segoe UI"', "sans-serif"],
         sans: [
-          '-apple-system', "BlinkMacSystemFont", '"Segoe UI"', "Roboto",
+          '"Manrope Variable"', '-apple-system', "BlinkMacSystemFont", '"Segoe UI"', "Roboto",
           '"Helvetica Neue"', "Arial", "sans-serif",
         ],
         mono: ['"SFMono-Regular"', "Menlo", "Consolas", '"Liberation Mono"', "monospace"],

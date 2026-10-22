@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api } from "../api";
+import { api, type ChatModelOptions } from "../api";
+import { AnswerModel } from "../components/AnswerModel";
 import { useAsync, fmtMs } from "../hooks";
 import { useViewMode } from "../view";
 import {
@@ -27,6 +28,7 @@ export default function Ask() {
   const { paperId = "" } = useParams();
   const paper = useAsync(() => api.getPaper(paperId), [paperId]);
   const [question, setQuestion] = useState("");
+  const [llm, setLlm] = useState<ChatModelOptions>({ provider: "server", model: "gpt-4o-mini" });
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,12 +39,16 @@ export default function Ask() {
   const { isAdvanced } = useViewMode();
 
   const ask = async (q: string) => {
-    if (!q.trim()) return;
+    if (busy) return;
+    if (q.trim().length < 3) { setError("Enter a question with at least 3 characters."); return; }
+    if (!["server", "offline"].includes(llm.provider) && (!llm.api_key?.trim() || !llm.model.trim())) {
+      setError("Open Answer settings and enter a model name and API key, or choose Offline excerpts."); return;
+    }
     setBusy(true);
     setError(null);
     setAnswer(null);
     try {
-      const a = await api.chat(paperId, q.trim(), Object.keys(config).length ? config : undefined);
+      const a = await api.chat(paperId, q.trim(), Object.keys(config).length ? config : undefined, llm);
       setAnswer(a);
     } catch (e) {
       setError((e as Error).message);
@@ -78,6 +84,7 @@ export default function Ask() {
         }
       />
 
+      <AnswerModel value={llm} onChange={setLlm} disabled={busy} />
       <Card className="mb-6 animate-rise transition-shadow duration-200 hover:shadow-lift">
         <form
           onSubmit={(e) => {
@@ -93,6 +100,9 @@ export default function Ask() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             rows={2}
+            minLength={3}
+            maxLength={2000}
+            required
             placeholder="e.g. How many parameters does the generator have?"
             className="w-full resize-none bg-transparent text-base outline-none placeholder:text-ink-faint focus:placeholder:text-ink-mute"
           />
@@ -109,7 +119,7 @@ export default function Ask() {
             ) : (
               <span className="text-xs text-ink-faint">Simplified — best settings chosen automatically</span>
             )}
-            <Button type="submit" busy={busy} disabled={!question.trim()}>
+            <Button type="submit" busy={busy}>
               {busy ? "Assembling evidence…" : "Ask"}
             </Button>
           </div>
@@ -155,7 +165,7 @@ export default function Ask() {
               key={s}
               onClick={() => {
                 setQuestion(s);
-                void ask(s);
+                document.getElementById("ask-q")?.focus();
               }}
               className="px-3 py-1.5 text-xs border border-line rounded-sm text-ink-soft hover:bg-panel hover:border-accent/40 transition-colors cursor-pointer"
             >
@@ -182,7 +192,7 @@ export default function Ask() {
         <div className="mt-2 space-y-4 animate-rise">
           <Card className="transition-shadow duration-200 hover:shadow-lift">
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              <Badge tone="accent">{answer.mode === "llm" ? "LLM answer" : "extractive (offline)"}</Badge>
+              <Badge tone="accent">{answer.mode === "generative" ? `LLM · ${answer.model}` : "Offline excerpts"}</Badge>
               <Badge tone={sourceTone(answer.confidence)}>{answer.confidence.replace(/_/g, " ")}</Badge>
               <Badge
                 tone={
@@ -250,9 +260,9 @@ export default function Ask() {
                     </span>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="font-medium text-accent">
+                        <Link to={`/papers/${paperId}?tab=pages&page=${c.page ?? 1}`} className="font-medium text-accent underline underline-offset-4">
                           {c.page_range ?? (c.page != null ? `p.${c.page}` : "p.?")}
-                        </span>
+                        </Link>
                         <span className="text-ink-faint truncate">{c.section}</span>
                         {isAdvanced && c.relevance != null && (
                           <span className="font-mono text-ink-faint">

@@ -58,3 +58,22 @@ def test_citations_only_for_sentences_used():
     cited_ids = {c.chunk_id for c in ans.citations}
     assert "c1" in cited_ids
     assert "c2" not in cited_ids
+
+
+def test_inline_citations_follow_answer_order():
+    ev = [
+        _chunk("c1", "The learning rate was fixed throughout training."),
+        _chunk("c2", "The learning rate and optimizer were tuned together."),
+    ]
+    ans = ExtractiveAnswerer().answer("What learning rate and optimizer?", _package(ev))
+    assert ans.answer.startswith(ev[1].text + " [1]")
+    assert ans.citations[0].chunk_id == "c2"
+    assert ans.citations[1].chunk_id == "c1"
+    assert "[2]" in ans.answer
+
+
+def test_over_budget_sentence_never_returns_empty_answer():
+    ev = [_chunk("c1", "The learning rate was " + "very " * 100 + "small.")]
+    ans = ExtractiveAnswerer(max_tokens=10).answer("What learning rate?", _package(ev))
+    assert ans.answer
+    assert ans.sufficiency == "insufficient"

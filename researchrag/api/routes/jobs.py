@@ -34,7 +34,7 @@ def get_job(job_id: str, ctx=Depends(get_ctx)):
 def list_jobs(paper_id: str, ctx=Depends(get_ctx)):
     from researchrag.api.deps import require_paper
 
-    require_paper(ctx, paper_id)
+    require_paper(ctx, paper_id, ready=False)
     jobs = ctx.db.list_jobs(paper_id)
     for j in jobs:
         raw = ctx.db.kv_get(f"job_result:{j['id']}")

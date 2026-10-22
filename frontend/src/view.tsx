@@ -47,13 +47,13 @@ export function useViewMode() {
 export function ViewToggle() {
   const { mode, setMode } = useViewMode();
   const options: Array<{ id: ViewMode; label: string; hint: string }> = [
-    { id: "simplified", label: "Simplified", hint: "Normal users" },
-    { id: "advanced", label: "Advanced", hint: "Developers" },
+    { id: "simplified", label: "Focus", hint: "Reading and answers" },
+    { id: "advanced", label: "Advanced", hint: "Pipeline tools and diagnostics" },
   ];
   return (
     <div
       role="group"
-      aria-label="View mode: simplified for normal users, advanced for developers"
+      aria-label="Workspace view"
       className="relative grid grid-cols-2 rounded-sm border border-line bg-panel p-0.5 text-xs"
     >
       <span

@@ -46,8 +46,7 @@ class QdrantStore:
         return None
 
     def ensure_collection(self, vector_size: int) -> None:
-        """Create the collection if absent; recreate if the dimension changed
-        (a different embedding model was configured)."""
+        """Create the collection if absent; preserve existing vectors on mismatch."""
         current = self.existing_dimension()
         if current is None:
             self.client.create_collection(
@@ -59,23 +58,11 @@ class QdrantStore:
             )
             self.vector_size = vector_size
         elif current != vector_size:
-            import logging
-
-            logging.getLogger(__name__).warning(
-                "Vector dimension changed (%d → %d): recreating collection. "
-                "Re-ingest all papers to repopulate dense vectors.",
-                current,
-                vector_size,
+            raise ValueError(
+                f"Embedding dimension {vector_size} does not match stored dimension {current}. "
+                "Restore the previous embedding model or use a new data directory and re-ingest. "
+                "The existing collection has been preserved."
             )
-            self.client.delete_collection(self.collection)
-            self.client.create_collection(
-                collection_name=self.collection,
-                vectors_config=VectorParams(
-                    size=vector_size,
-                    distance=Distance.COSINE,
-                ),
-            )
-            self.vector_size = vector_size
         else:
             self.vector_size = vector_size
 

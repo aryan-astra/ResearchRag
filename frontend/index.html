@@ -8,8 +8,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230f5e56'/%3E%3Ctext x='8' y='11.5' font-family='Georgia,serif' font-size='9' fill='%23faf9f6' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E" />
     <script>
       try {
-        if (localStorage.getItem("rr-theme") === "dark" ||
-            (!localStorage.getItem("rr-theme") && matchMedia("(prefers-color-scheme: dark)").matches)) {
+        if (localStorage.getItem("rr-theme") === "dark") {
           document.documentElement.classList.add("dark");
         }
       } catch (e) {}

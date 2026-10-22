@@ -15,6 +15,7 @@ import Evaluations from "./pages/Evaluations";
 import Experiments from "./pages/Experiments";
 import Jobs from "./pages/Jobs";
 import Health from "./pages/Health";
+import SampleArt from "./pages/SampleArt";
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="implementations/:implId" element={<ImplementationDetail />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="health" element={<Health />} />
+        <Route path="sample-art" element={<SampleArt />} />
         <Route path="*" element={<Dashboard />} />
       </Route>
     </Routes>

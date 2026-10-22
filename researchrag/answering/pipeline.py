@@ -116,6 +116,6 @@ class AnsweringPipeline:
             citations=[item.citation for item in package.items],
             evidence=[item.chunk for item in package.items],
             sufficiency=sufficiency or "partial",
-            confidence=confidence or "strongly_inferred",
+            confidence=confidence or "unknown",
             tokens_used=resp.tokens_used,
         )

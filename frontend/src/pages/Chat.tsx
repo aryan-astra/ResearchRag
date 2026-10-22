@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { api } from "../api";
+import { api, type ChatModelOptions } from "../api";
+import { AnswerModel } from "../components/AnswerModel";
+import { usePageMotion } from "../motion";
 import { useAsync } from "../hooks";
 import { useViewMode } from "../view";
 import {
@@ -25,7 +27,8 @@ const SUGGESTIONS = [
 
 export default function Chat() {
   const [params, setParams] = useSearchParams();
-  const { data: papers } = useAsync(() => api.listPapers(), []);
+  const { data: papers, loading, error: papersError } = useAsync(() => api.listPapers(), []);
+  const [llm, setLlm] = useState<ChatModelOptions>({ provider: "server", model: "gpt-4o-mini" });
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [busy, setBusy] = useState(false);
@@ -36,14 +39,19 @@ export default function Chat() {
   const ready = useMemo(() => (papers ?? []).filter((p) => p.status === "ready"), [papers]);
   const paperId = params.get("paper") ?? "";
   const activeId = ready.some((p) => p.id === paperId) ? paperId : ready[0]?.id ?? "";
+  const resultScope = usePageMotion(answer?.question ?? "");
 
   const ask = async (q: string) => {
-    if (!q.trim() || !activeId) return;
+    if (busy || !activeId) return;
+    if (q.trim().length < 3) { setError("Enter a question with at least 3 characters."); return; }
+    if (!["server", "offline"].includes(llm.provider) && (!llm.api_key?.trim() || !llm.model.trim())) {
+      setError("Open Answer settings and enter a model name and API key, or choose Offline excerpts."); return;
+    }
     setBusy(true);
     setError(null);
     setAnswer(null);
     try {
-      setAnswer(await api.chat(activeId, q.trim()));
+      setAnswer(await api.chat(activeId, q.trim(), undefined, llm));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -55,16 +63,16 @@ export default function Chat() {
     <>
       <PageHeader
         kicker="Chat"
-        title="Chat with your papers"
+        title="Ask. Explore. Understand."
         sub={
           isAdvanced
             ? "Global chat — pick a paper, ask grounded questions, inspect raw answer JSON."
-            : "Pick a paper and ask questions — every answer is grounded in the paper with citations."
+            : "A conversation with your research. Evidence a click away."
         }
         right={<ThemeNote />}
       />
 
-      {ready.length === 0 ? (
+      {papersError ? <ErrorNote message={papersError} /> : loading ? <Skeleton lines={3} /> : ready.length === 0 ? (
         <Empty
           title="No papers ready yet"
           hint={
@@ -76,7 +84,8 @@ export default function Chat() {
         />
       ) : (
         <>
-          <Card className="mb-6 animate-rise transition-shadow duration-200 hover:shadow-lift">
+          <AnswerModel value={llm} onChange={setLlm} disabled={busy} />
+          <Card className="chat-composer mb-6">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -90,7 +99,8 @@ export default function Chat() {
                 <select
                   id="chat-paper"
                   value={activeId}
-                  onChange={(e) => setParams(e.target.value ? { paper: e.target.value } : {})}
+                  disabled={busy}
+                  onChange={(e) => { setAnswer(null); setError(null); setParams(e.target.value ? { paper: e.target.value } : {}); }}
                   className="border border-line rounded-sm px-2.5 py-2 text-sm bg-card max-w-full sm:max-w-[28rem] cursor-pointer focus:outline-none focus:border-accent"
                 >
                   {ready.map((p) => (
@@ -100,8 +110,8 @@ export default function Chat() {
                   ))}
                 </select>
                 {activeId && (
-                  <Link to={`/papers/${activeId}/ask`} className="text-xs text-accent hover:underline">
-                    Open paper workspace →
+                  <Link to={`/papers/${activeId}`} className="text-xs text-ink-mute hover:underline">
+                    Read original ↗
                   </Link>
                 )}
               </div>
@@ -113,12 +123,15 @@ export default function Chat() {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 rows={2}
+                minLength={3}
+                maxLength={2000}
+                required
                 placeholder="e.g. What is the main equation of this paper?"
                 className="w-full resize-none bg-transparent text-base outline-none placeholder:text-ink-faint"
               />
               <div className="flex items-center justify-end mt-3 pt-3 border-t border-line">
-                <Button type="submit" busy={busy} disabled={!question.trim() || !activeId}>
-                  {busy ? "Thinking…" : "Ask"}
+                <Button type="submit" busy={busy} disabled={!activeId}>
+                  {busy ? "Reading the evidence…" : "Ask your paper"}
                 </Button>
               </div>
             </form>
@@ -131,7 +144,7 @@ export default function Chat() {
                   key={s}
                   onClick={() => {
                     setQuestion(s);
-                    void ask(s);
+                    document.getElementById("chat-q")?.focus();
                   }}
                   className="px-3 py-1.5 text-xs border border-line rounded-sm text-ink-soft hover:bg-panel hover:border-accent/40 hover:-translate-y-[1px] transition-all cursor-pointer"
                 >
@@ -154,10 +167,10 @@ export default function Chat() {
           )}
 
           {answer && (
-            <div className="mt-2 space-y-4 animate-rise">
+            <div ref={resultScope} aria-live="polite"><div data-enter className="chat-result mt-2 space-y-4">
               <Card className="transition-shadow duration-200 hover:shadow-lift">
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Badge tone="accent">{answer.mode === "llm" ? "LLM answer" : "extractive (offline)"}</Badge>
+                  <Badge tone="accent">{answer.mode === "generative" ? `LLM · ${answer.model}` : "Offline excerpts"}</Badge>
                   <Badge tone={sourceTone(answer.confidence)}>{answer.confidence.replace(/_/g, " ")}</Badge>
                   <Badge
                     tone={
@@ -200,9 +213,9 @@ export default function Chat() {
                         <span className="font-mono text-xs text-ink-faint pt-0.5 w-5 shrink-0">[{i + 1}]</span>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2 text-xs">
-                            <span className="font-medium text-accent">
+                            <Link to={`/papers/${activeId}?tab=pages&page=${c.page ?? 1}`} className="font-medium text-accent underline underline-offset-4">
                               {c.page_range ?? (c.page != null ? `p.${c.page}` : "p.?")}
-                            </span>
+                            </Link>
                             <span className="text-ink-faint truncate">{c.section}</span>
                           </div>
                           {c.quote && (
@@ -216,7 +229,7 @@ export default function Chat() {
                   </ol>
                 </Card>
               )}
-            </div>
+            </div></div>
           )}
         </>
       )}
@@ -227,7 +240,7 @@ export default function Chat() {
 function ThemeNote() {
   return (
     <span className="text-[11px] text-ink-faint hidden sm:inline">
-      Grounded answers only — never parametric knowledge.
+      Verify the answer. Follow the sources.
     </span>
   );
 }

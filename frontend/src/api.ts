@@ -29,6 +29,12 @@ export class ApiError extends Error {
   }
 }
 
+export interface ChatModelOptions {
+  provider: "server" | "offline" | "openai" | "groq" | "gemini";
+  model: string;
+  api_key?: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
@@ -80,8 +86,8 @@ export const api = {
   deletePaper: (id: string) => del<void>(`/api/papers/${id}`),
 
   // search
-  chat: (paperId: string, question: string, config?: RetrievalConfig) =>
-    post<Answer>(`/api/papers/${paperId}/chat`, { question, config: config ?? null }),
+  chat: (paperId: string, question: string, config?: RetrievalConfig, llm?: ChatModelOptions) =>
+    post<Answer>(`/api/papers/${paperId}/chat`, { question, config: config ?? null, llm }),
   retrieve: (paperId: string, query: string, config?: RetrievalConfig) =>
     post<RetrievalResult>(`/api/papers/${paperId}/retrieve`, { query, config: config ?? null }),
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAsync, fmtDate } from "../hooks";
 import {
@@ -25,10 +25,11 @@ const TABS = [
 
 export default function PaperDetail() {
   const { paperId = "" } = useParams();
-  const [tab, setTab] = useState("overview");
+  const [params, setParams] = useSearchParams();
+  const tab = TABS.some((t) => t.id === params.get("tab")) ? params.get("tab")! : "overview";
   const paper = useAsync(() => api.getPaper(paperId), [paperId]);
   const structure = useAsync(() => api.structure(paperId), [paperId]);
-  const chunks = useAsync(() => api.chunks(paperId, "child"), [paperId]);
+  const chunks = useAsync(() => api.chunks(paperId), [paperId]);
 
   if (paper.error) return <ErrorNote message={paper.error} />;
   if (!paper.data) return <Loading label="Loading paper…" />;
@@ -68,7 +69,7 @@ export default function PaperDetail() {
           </>
         }
       />
-      <Tabs tabs={TABS} active={tab} onChange={setTab} />
+      <Tabs tabs={TABS} active={tab} onChange={(value) => setParams({ tab: value })} />
 
       {tab === "overview" && <Overview p={p} />}
       {tab === "structure" && (
@@ -92,7 +93,7 @@ export default function PaperDetail() {
         />
       )}
       {tab === "pages" && (
-        <PagesView paperId={p.id} pageCount={p.page_count} />
+        <PagesView key={paperId + params.get("page")} paperId={p.id} pageCount={p.page_count} initialPage={Number(params.get("page") || 1)} />
       )}
     </>
   );
@@ -267,6 +268,8 @@ function ChunksView({
           {open.chunk_type === "formula" ? (
             <div className="border border-line rounded-sm bg-panel/60 p-4">
               <div className="math-scroll font-math text-[17px] leading-relaxed text-ink">{open.text}</div>
+              <p className="text-xs text-ink-mute mt-3">Extracted equation text may lose layout, subscripts or symbols. Check the original page for the exact notation.</p>
+              <Link to={`?tab=pages&page=${open.page_start}`} className="inline-block text-xs text-accent underline mt-2">View original equation on page {open.page_start}</Link>
               <button
                 onClick={() => void navigator.clipboard?.writeText(open.text)}
                 className="mt-2.5 font-mono text-[11px] text-accent hover:underline cursor-pointer"
@@ -292,11 +295,10 @@ function ChunksView({
           {chunks.slice(0, 200).map((c) => (
             <tr
               key={c.id}
-              onClick={() => setOpen(c)}
-              className="cursor-pointer hover:bg-panel/50 transition-colors"
+              className="hover:bg-panel/50 transition-colors"
             >
               <Td className="max-w-[24rem]">
-                <span className="text-ink-soft line-clamp-1">{c.text}</span>
+                <button onClick={() => setOpen(c)} className="text-left text-ink-soft line-clamp-1 hover:underline">{c.text}</button>
               </Td>
               <Td>
                 <span className="text-xs text-ink-faint">{c.section_path.join(" › ") || "—"}</span>
@@ -325,11 +327,11 @@ function ChunksView({
   );
 }
 
-function PagesView({ paperId, pageCount }: { paperId: string; pageCount: number }) {
-  const [n, setN] = useState(1);
+function PagesView({ paperId, pageCount, initialPage }: { paperId: string; pageCount: number; initialPage: number }) {
+  const [n, setN] = useState(Number.isInteger(initialPage) ? Math.max(1, Math.min(initialPage, pageCount)) : 1);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [retry, setRetry] = useState(0);
-  const nums = useMemo(() => Array.from({ length: Math.min(pageCount, 200) }, (_, i) => i + 1), [pageCount]);
+  const nums = useMemo(() => Array.from({ length: pageCount }, (_, i) => i + 1), [pageCount]);
   const src = `/api/papers/${paperId}/pages/${n}/image?dpi=110`;
 
   // Reset on page/paper change and warm the neighbours via JS Image
@@ -390,7 +392,7 @@ function PagesView({ paperId, pageCount }: { paperId: string; pageCount: number 
           </div>
         )}
       </Card>
-      <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:max-h-[75vh] md:overflow-y-auto pr-1 pb-1" role="listbox" aria-label="Pages">
+      <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:max-h-[75vh] md:overflow-y-auto pr-1 pb-1" aria-label="Pages">
         {nums.map((i) => (
           <button
             key={i}
@@ -406,7 +408,7 @@ function PagesView({ paperId, pageCount }: { paperId: string; pageCount: number 
             p.{i}
           </button>
         ))}
-      </div>
+      </nav>
     </div>
   );
 }

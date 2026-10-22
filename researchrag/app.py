@@ -52,7 +52,11 @@ def build_parser(settings: Settings) -> BaseParser:
             "Docling backend requested but not installed — using PyMuPDF. "
             "Install with: pip install 'researchrag[docling]'"
         )
-    return PymupdfParser(figure_max_pixels=settings.figure_max_pixels)
+    return PymupdfParser(
+        figure_max_pixels=settings.figure_max_pixels,
+        enable_ocr=settings.enable_ocr,
+        ocr_language=settings.ocr_language,
+    )
 
 
 class AppContext:

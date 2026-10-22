@@ -5,6 +5,7 @@ import App from "./App";
 import { ViewModeProvider } from "./view";
 import { ThemeProvider } from "./theme";
 import "./index.css";
+import "@fontsource-variable/manrope";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

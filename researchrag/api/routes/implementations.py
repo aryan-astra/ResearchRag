@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,7 +11,7 @@ from pydantic import BaseModel
 
 from researchrag.api.deps import get_ctx, require_paper, run_job
 from researchrag.codegen.generator import CodeGenerator
-from researchrag.execution.runner import run_command
+from researchrag.execution.runner import run_command, shell_available
 from researchrag.repro.metrics import parse_metrics_from_output, record_run_results
 from researchrag.spec.evidence import spec_evidence
 from researchrag.spec.loader import spec_from_db
@@ -129,13 +130,13 @@ def _run(ctx, impl_id: str, kind: str, timeout: int) -> dict:
             target.chmod(0o755)
 
     if kind == "smoke":
-        cmd = ["bash", "run_smoke.sh"]
+        cmd = ["bash", "run_smoke.sh"] if shell_available() else [sys.executable, "tests/test_smoke.py"]
     elif kind == "tests":
-        cmd = ["bash", "-c", "python tests/test_smoke.py"]
+        cmd = [sys.executable, "tests/test_smoke.py"]
     else:  # train
         pkg = next((d for d in (project_dir / "src").iterdir() if d.is_dir()), None)
         module = pkg.name.replace("-", "_") if pkg else "project"
-        cmd = ["bash", "-c", f"python -m {module}.train --config config.yaml"]
+        cmd = [sys.executable, "-m", f"{module}.train", "--config", "config.yaml"]
 
     log_path = project_dir / "logs" / f"run_{new_id('run')[-6:]}.log"
     result = run_command(
@@ -144,6 +145,7 @@ def _run(ctx, impl_id: str, kind: str, timeout: int) -> dict:
         timeout_s=timeout,
         memory_mb=ctx.settings.execution_memory_mb,
         log_path=log_path,
+        extra_env={"PYTHON_BIN": sys.executable, "PYTHONPATH": str(project_dir / "src")},
     )
     metrics = parse_metrics_from_output(result.stdout)
     run_record = {

@@ -67,25 +67,29 @@ class AnthropicLLM(BaseLLM):
                     resp = client.post(url, json=body, headers=headers)
                 dt = (time.perf_counter() - t0) * 1000
                 if resp.status_code >= 500 or resp.status_code == 429:
-                    last_error = LLMError(f"HTTP {resp.status_code}: {resp.text[:300]}")
+                    last_error = LLMError(f"HTTP {resp.status_code}")
                     time.sleep(min(2 ** attempt, 8))
                     continue
                 if resp.status_code >= 400:
                     raise LLMError(
-                        f"Anthropic request failed (HTTP {resp.status_code}): "
-                        f"{resp.text[:500]}"
+                        f"Anthropic request failed (HTTP {resp.status_code})"
                     )
-                data = resp.json()
-                text = "".join(
-                    b.get("text", "") for b in data.get("content", [])
-                    if b.get("type") == "text"
-                )
+                try:
+                    data = resp.json()
+                    text = "".join(
+                        b.get("text", "") for b in data.get("content", [])
+                        if b.get("type") == "text"
+                    )
+                    if not text.strip():
+                        raise ValueError("Empty completion")
+                except (ValueError, KeyError, TypeError, AttributeError) as e:
+                    raise LLMError("Anthropic returned no usable text") from e
                 usage = data.get("usage") or {}
                 log.info("Anthropic: %dms, model=%s", dt, self.model)
                 return LLMResponse(
                     text=text,
                     model=data.get("model", self.model),
-                    tokens_used=usage.get("input_tokens") + usage.get("output_tokens"),
+                    tokens_used=(usage.get("input_tokens") or 0) + (usage.get("output_tokens") or 0),
                     finish_reason=data.get("stop_reason"),
                     raw=data,
                 )

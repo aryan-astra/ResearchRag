@@ -1,10 +1,11 @@
-import { NavLink, Outlet } from "react-router-dom";
-import type { CSSProperties, ReactNode } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
 import { useAsync } from "../hooks";
 import { api } from "../api";
 import { ViewToggle, useViewMode } from "../view";
 import { ThemeToggle } from "../theme";
 import { StatusDot, embedderStatus } from "./ui";
+import { usePageMotion } from "../motion";
 
 const NAV: Array<{ to: string; label: string; end?: boolean; hint: string; icon: ReactNode }> = [
   {
@@ -68,94 +69,41 @@ const NAV: Array<{ to: string; label: string; end?: boolean; hint: string; icon:
 ];
 
 export default function Layout() {
-  const { data: health } = useAsync(() => api.health(), []);
+  const { data: health, error } = useAsync(() => api.health(), []);
   const { isAdvanced } = useViewMode();
-  const emb = health ? embedderStatus(health.embedding_fallback) : null;
-
+  const location = useLocation();
+  const scope = usePageMotion(location.pathname);
+  const emb = health ? embedderStatus(health.embedding_fallback, health.embedding_model) : null;
+  const current = NAV.find((n) => n.end ? location.pathname === n.to : location.pathname.startsWith(n.to));
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-paper">
-      <aside className="w-full md:w-60 md:shrink-0 border-b md:border-b-0 md:border-r border-line bg-card/90 backdrop-blur flex flex-col md:sticky md:top-0 md:h-screen">
-        <div className="px-5 pt-5 md:pt-6 pb-4 md:pb-5 border-b border-line">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="font-display text-xl tracking-tight leading-none">
-                Research<span className="text-accent">RAG</span>
-              </div>
-              <div className="text-[11px] text-ink-faint mt-1.5 tracking-wide">
-                evidence-first paper → code
-              </div>
-            </div>
-            <ThemeToggle />
-          </div>
-          <div className="mt-4">
-            <ViewToggle />
-            <div className="mt-1.5 text-[11px] text-ink-faint">
-              {isAdvanced ? "Advanced — full pipeline detail" : "Simplified — normal users"}
-            </div>
-          </div>
-        </div>
-        <nav aria-label="Primary" className="flex md:flex-col gap-0.5 px-3 py-3 md:py-4 overflow-x-auto md:overflow-visible md:flex-1 stagger" style={{ "--stagger": 35 } as CSSProperties}>
-          {NAV.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              title={n.hint}
-              className={({ isActive }) =>
-                `group relative flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm whitespace-nowrap transition-all duration-150 focus:outline-none ${
-                  isActive
-                    ? "bg-panel text-ink font-medium"
-                    : "text-ink-mute hover:text-ink hover:bg-panel/60 hover:translate-x-[1px]"
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    aria-hidden
-                    className={`absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-accent transition-opacity duration-150 ${
-                      isActive ? "opacity-100" : "opacity-0 group-hover:opacity-40"
-                    }`}
-                  />
-                  <span className={isActive ? "text-accent" : "text-ink-faint group-hover:text-ink-soft transition-colors"}>
-                    {n.icon}
-                  </span>
-                  {n.label}
-                </>
-              )}
-            </NavLink>
-          ))}
+    <div className="app-shell">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <aside className="workspace-sidebar">
+        <Link to="/" className="brand"><span className="brand-symbol" aria-hidden>r<span>↗</span></span><span>ResearchRAG<small>Your research workspace</small></span></Link>
+        <Link to="/papers" className="sidebar-upload"><span aria-hidden>＋</span> Add a paper</Link>
+        <div className="nav-section-label">Workspace</div>
+        <nav aria-label="Primary" className="workspace-nav">
+          {NAV.map((n) => <NavLink key={n.to} to={n.to} end={n.end} title={n.hint}
+            className={({ isActive }) => `workspace-nav-link ${isActive ? "is-active" : ""}`}>
+            {n.icon}<span>{n.label === "Dashboard" ? "Overview" : n.label === "Papers" ? "Paper library" : n.label === "Chat" ? "Ask your papers" : n.label === "Jobs" ? "Activity" : "Settings & models"}</span>
+          </NavLink>)}
+          <NavLink to="/sample-art" className={({ isActive }) => `workspace-nav-link ${isActive ? "is-active" : ""}`}><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden><ellipse cx="10" cy="10" rx="8" ry="3.5" transform="rotate(-35 10 10)" stroke="currentColor" /><ellipse cx="10" cy="10" rx="8" ry="3.5" transform="rotate(35 10 10)" stroke="currentColor" /><circle cx="10" cy="10" r="1.5" fill="currentColor" /></svg><span>Visual studies</span></NavLink>
         </nav>
-        <div className="hidden md:block px-5 py-4 border-t border-line text-[11px] text-ink-faint leading-relaxed">
-          {health && emb ? (
-            <>
-              <div className="flex items-center gap-1.5 text-ink-soft">
-                <StatusDot tone={emb.tone} />
-                <span className="font-medium">
-                  Embedder: {emb.primary}
-                  <span className="text-ink-faint"> · {emb.detail}</span>
-                </span>
-              </div>
-              <div className="mt-1">
-                Reranker: {health.reranker === "local" ? "Local" : health.reranker} · LLM:{" "}
-                {health.llm === "offline" ? "Offline" : health.llm}
-              </div>
-              {isAdvanced && (
-                <div className="mt-1.5 font-mono text-[10.5px] text-ink-faint break-all animate-fadein">
-                  {health.embedding_model}
-                  {health.embedding_fallback ? " · fallback=true" : ""}
-                </div>
-              )}
-            </>
-          ) : (
-            "API offline — start the server"
-          )}
+        <div className="sidebar-bottom">
+          <div className="sidebar-mode"><span>Workspace view</span><ViewToggle /></div>
+          <Link to="/health" className="connection-status">
+            <StatusDot tone={error ? "warn" : health ? "ok" : "warn"} />
+            <span>{error ? "Connection unavailable" : health ? "Connected locally" : "Connecting…"}
+              <small>{health ? health.llm === "offline" ? "Offline excerpts available" : "Model ready" : "Check workspace settings"}</small>
+              {isAdvanced && emb && <small>{emb.detail} · {health?.embedding_model}</small>}
+            </span>
+          </Link>
+          <div className="sidebar-signature"><span className="workspace-avatar">R</span><span>Personal workspace<small>Stored on this device</small></span></div>
         </div>
       </aside>
-      <main className="flex-1 min-w-0">
-        <div className="max-w-content mx-auto px-4 sm:px-8 py-6 sm:py-8">
-          <Outlet />
-        </div>
+      <main id="main-content" tabIndex={-1} className="workspace-main">
+        <header className="workspace-topbar"><span>Workspace <span aria-hidden>/</span> <strong>{location.pathname === "/sample-art" ? "Visual studies" : current?.label ?? "Paper workspace"}</strong></span><div><span className="local-label">Local workspace</span><ThemeToggle /></div></header>
+        <div ref={scope} className="workspace-content"><Outlet /></div>
       </main>
     </div>
   );

@@ -90,8 +90,11 @@ def _sha256_of(path: Path) -> str:
 class PymupdfParser(BaseParser):
     name = "pymupdf"
 
-    def __init__(self, figure_max_pixels: int = 1_600_000):
+    def __init__(self, figure_max_pixels: int = 1_600_000, enable_ocr: bool = False,
+                 ocr_language: str = "eng"):
         self.figure_max_pixels = figure_max_pixels
+        self.enable_ocr = enable_ocr
+        self.ocr_language = ocr_language
 
     # ==================================================================
     # Public API
@@ -157,11 +160,6 @@ class PymupdfParser(BaseParser):
                         b.id = make_block_id(paper_id, page_no, next_order + i)
                     next_order += len(blocks)
 
-                    if not blocks:
-                        raise ParseError(
-                            f"No extractable text, tables or figures on page {page_no}. "
-                            "The PDF may be a scanned document (enable OCR) or malformed."
-                        )
                     page_models.append(
                         Page(
                             number=page_no,
@@ -187,8 +185,11 @@ class PymupdfParser(BaseParser):
         )
         self._fill_metadata(paper)
         self._remove_running_headers(paper)
-        if paper.block_count == 0:
-            raise ParseError("Document contains no blocks.")
+        if not any(b.text.strip() for b in paper.all_blocks()):
+            raise ParseError(
+                "PDF contains no extractable text. For scanned PDFs, enable OCR "
+                "and install Tesseract, or use the Docling parser."
+            )
         return paper
 
     def _is_running_header(self, b: Block, paper_title: str, h: float) -> bool:
@@ -354,6 +355,16 @@ class PymupdfParser(BaseParser):
 
         # ---- pass 4: link captions to figures/tables ----------------------
         self._link_captions(ordered)
+        # Captions need final IDs; placeholders are empty during the page pass.
+        for i, b in enumerate(ordered):
+            b.id = make_block_id(paper_id, page_no, counters["next_order"] + i)
+        for c in ordered:
+            if c.block_type == BlockType.CAPTION and "for_block" in c.metadata:
+                asset = next((b for b in ordered if b.caption == c.text.strip()
+                              and b.block_type in (BlockType.FIGURE, BlockType.TABLE)), None)
+                if asset:
+                    c.metadata["for_block"] = asset.id
+        counters["next_order"] += len(ordered)
         return ordered
 
     @staticmethod
@@ -707,6 +718,18 @@ class PymupdfParser(BaseParser):
 
     def _extract_text_items(self, page) -> list:
         d = page.get_text("dict")
+        text = "".join(
+            span.get("text", "") for block in d.get("blocks", [])
+            for line in block.get("lines", []) for span in line.get("spans", [])
+        )
+        if self.enable_ocr and len(text.strip()) < 30 and page.get_images():
+            try:
+                textpage = page.get_textpage_ocr(language=self.ocr_language, full=False)
+                d = page.get_text("dict", textpage=textpage)
+            except Exception as e:
+                raise ParseError(
+                    "OCR failed. Install Tesseract and the configured language data."
+                ) from e
         items: list[self._TextItem] = []
         page_rect = page.rect
         for block in d.get("blocks", []):
@@ -950,7 +973,7 @@ class PymupdfParser(BaseParser):
 
     def _find_images(self, page, doc, paper_id: str, page_no: int, figure_dir: Path) -> list:
         try:
-            infos = page.get_image_info(hashes=False)
+            infos = page.get_image_info(xrefs=True)
         except Exception:
             infos = []
         images = []

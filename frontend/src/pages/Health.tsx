@@ -33,7 +33,7 @@ export default function HealthPage() {
     );
   }
 
-  const emb = embedderStatus(h.embedding_fallback);
+  const emb = embedderStatus(h.embedding_fallback, h.embedding_model);
   const llmOffline = h.llm === "offline";
   const rerankLocal = h.reranker === "local";
 

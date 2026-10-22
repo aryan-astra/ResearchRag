@@ -83,3 +83,17 @@ def test_validator_falls_back_without_bash(tmp_path, monkeypatch):
     assert by_name["tests"].status == "passed"
     assert by_name["smoke"].status == "passed"
     assert "no bash" in by_name["smoke"].detail
+
+
+def test_smoke_failure_cannot_report_success(tmp_path, monkeypatch):
+    import researchrag.codegen.validator as validator
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "demo.py").write_text("pass\n", encoding="utf-8")
+    monkeypatch.setattr(validator, "_run_checks", lambda *args: [
+        validator.StageResult("tests", "passed"),
+        validator.StageResult("smoke", "failed", "entry point failed"),
+    ])
+    result = validator.validate_project(tmp_path)
+    assert not result.ok
+    assert "[smoke] entry point failed" in result.errors

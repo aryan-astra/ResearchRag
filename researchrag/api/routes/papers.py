@@ -8,8 +8,8 @@ import re
 import shutil
 from pathlib import Path
 
-import fitz  # PyMuPDF
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+import pymupdf as fitz
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 
 from researchrag.api.deps import get_ctx, require_paper, run_job
@@ -34,9 +34,9 @@ def list_papers(ctx=Depends(get_ctx)):
 async def upload_paper(file: UploadFile, ctx=Depends(get_ctx)):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
-    data = await file.read()
-    if len(data) < 1000:
-        raise HTTPException(status_code=400, detail="File too small to be a valid PDF")
+    data = await file.read(100 * 1024 * 1024 + 1)
+    if not data.lstrip().startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="File is not a PDF")
     if len(data) > 100 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large (max 100 MB)")
 
@@ -79,14 +79,18 @@ async def upload_paper(file: UploadFile, ctx=Depends(get_ctx)):
 
 
 def _ingest(ctx, paper_id: str, path: Path, progress=None) -> dict:
-    result = ctx.ingestion.ingest_file(path, progress=progress, paper_id=paper_id)
+    try:
+        result = ctx.ingestion.ingest_file(path, progress=progress, paper_id=paper_id)
+    except Exception as e:
+        ctx.db.upsert_paper(id=paper_id, status="failed", error=str(e))
+        raise
     ctx.invalidate_retriever(paper_id)
     return result.__dict__
 
 
 @router.get("/papers/{paper_id}")
 def get_paper(paper_id: str, ctx=Depends(get_ctx)):
-    paper = require_paper(ctx, paper_id)
+    paper = require_paper(ctx, paper_id, ready=False)
     paper["jobs"] = [
         j
         for j in ctx.db.query(
@@ -99,7 +103,9 @@ def get_paper(paper_id: str, ctx=Depends(get_ctx)):
 
 @router.delete("/papers/{paper_id}", status_code=204)
 def delete_paper(paper_id: str, ctx=Depends(get_ctx)):
-    require_paper(ctx, paper_id)
+    paper = require_paper(ctx, paper_id, ready=False)
+    if paper["status"] in ("queued", "processing"):
+        raise HTTPException(status_code=409, detail="Wait for ingestion to finish before deleting")
     ctx.ingestion.remove_paper(paper_id)
     ctx.invalidate_retriever(paper_id)
 
@@ -154,7 +160,7 @@ def paper_chunks(paper_id: str, kind: str | None = None, ctx=Depends(get_ctx)):
 
 
 @router.get("/papers/{paper_id}/pages/{page_number}/image")
-def page_image(paper_id: str, page_number: int, dpi: int = 110, ctx=Depends(get_ctx)):
+def page_image(paper_id: str, page_number: int, dpi: int = Query(default=110, ge=36, le=300), ctx=Depends(get_ctx)):
     """Rendered page PNG (cached per paper/page/dpi)."""
     paper = require_paper(ctx, paper_id)
     if page_number < 1 or page_number > paper["page_count"]:
@@ -179,7 +185,7 @@ def page_image(paper_id: str, page_number: int, dpi: int = 110, ctx=Depends(get_
 def block_image(paper_id: str, block_id: str, ctx=Depends(get_ctx)):
     """Figure image extracted during parsing."""
     require_paper(ctx, paper_id)
-    rows = ctx.db.query("SELECT image_path FROM blocks WHERE id = ?", (block_id,))
+    rows = ctx.db.query("SELECT image_path FROM blocks WHERE id = ? AND paper_id = ?", (block_id, paper_id))
     if not rows or not rows[0]["image_path"]:
         raise HTTPException(status_code=404, detail="No image for this block")
     p = Path(rows[0]["image_path"])

@@ -33,6 +33,7 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
 export function useJob(jobId: string | null) {
   const [job, setJob] = useState<Job | null>(null);
   useEffect(() => {
+    setJob(null);
     if (!jobId) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -41,10 +42,10 @@ export function useJob(jobId: string | null) {
         const j = await api.getJob(jobId);
         if (!alive) return;
         setJob(j);
-        if ((j.status === "done" || j.status === "failed") && timer) return;
+        if (j.status === "done" || j.status === "failed") return;
         timer = setTimeout(tick, 1200);
       } catch {
-        if (timer) timer = setTimeout(tick, 2500);
+        if (alive) timer = setTimeout(tick, 2500);
       }
     };
     void tick();

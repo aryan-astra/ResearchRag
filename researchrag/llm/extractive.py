@@ -62,6 +62,8 @@ class ExtractiveAnswerer:
                 sent = sent.strip()
                 if len(sent) < 20:
                     continue
+                if self._counter.count(sent + " [1]") > self.max_tokens:
+                    continue
                 scored.append(
                     (_sentence_overlap(sent, question), item_idx, sent, 0)
                 )
@@ -86,15 +88,17 @@ class ExtractiveAnswerer:
 
         used = 0
         parts: list[str] = []
-        cited_items: set[int] = set()
+        cited_items: dict[int, int] = {}
         for score, item_idx, sent, _ in best:
             if score <= 0.05:
                 break  # sentences are sorted; stop before pulling in unrelated text
-            cost = self._counter.count(sent)
+            number = cited_items.get(item_idx, len(cited_items) + 1)
+            cited = f"{sent} [{number}]"
+            cost = self._counter.count(cited)
             if used + cost > self.max_tokens:
-                break
-            parts.append(sent)
-            cited_items.add(item_idx)
+                continue
+            parts.append(cited)
+            cited_items[item_idx] = number
             used += cost
 
         sufficiency = "sufficient" if best[0][0] >= 0.35 else "partial"
@@ -104,8 +108,8 @@ class ExtractiveAnswerer:
             answer=" ".join(parts),
             mode="extractive",
             model=None,
-            citations=[evidence.items[i].citation for i in sorted(cited_items)],
-            evidence=[evidence.items[i].chunk for i in sorted(cited_items)],
+            citations=[evidence.items[i].citation for i in cited_items],
+            evidence=[evidence.items[i].chunk for i in cited_items],
             sufficiency=sufficiency,
             confidence=confidence,
         )

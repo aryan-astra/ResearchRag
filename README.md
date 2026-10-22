@@ -25,10 +25,12 @@ Default stack runs offline on a laptop: SQLite + embedded Qdrant + ONNX models (
 
 ## 1. Requirements
 
+For current publishing safeguards, see [SECURITY.md](SECURITY.md). API keys are optional and are entered at runtime; none are bundled. See [LOCAL_MODELS.md](LOCAL_MODELS.md) for low-end hardware and provider setup.
+
 | Dependency | Version | Notes |
 |---|---|---|
 | Python | ≥ 3.10 (tested 3.11) | `python -m venv .venv` |
-| Node.js | ≥ 18 | Only for `frontend/` development (`npm run dev`); production UI is served by the API from `frontend/dist` |
+| Node.js | ≥ 22.12 | For frontend build/development; the pinned Vite 8 toolchain requires a modern Node runtime. Production UI is served by the API from `frontend/dist` |
 | OS | Linux / macOS / Windows | Memory caps in the sandbox use `resource.setrlimit` on POSIX; on Windows they degrade to timeout + env scrubbing |
 
 No PyTorch, no LangChain/LlamaIndex, no vector-DB server, no API key in the default path.
@@ -43,7 +45,7 @@ python -m venv .venv
 .venv/bin/researchrag ask paper_16c17d9569a2 "What is RAG?"
 .venv/bin/researchrag serve               # API :8000, OpenAPI at /docs
 
-cd frontend && npm install && npm run dev # UI :5173, proxies /api → :8000
+cd frontend && npm ci && npm run dev # UI :5173, proxies /api → :8000
 ```
 
 Production UI without a second process:
@@ -57,10 +59,12 @@ Copy `.env.example` to `.env` to override any setting (all `RESEARCHRAG_*`, §6)
 
 ## 3. Repository layout
 
+For a pinned developer environment, install `requirements-dev.lock` and then install this package with `pip install --no-deps -e .`. The lock supports Python 3.11+ and includes platform markers. GitHub Actions checks secrets across reachable history, runs pytest, and builds the frontend with `npm ci`.
+
 ```
 researchrag/          Python package — the entire backend (API, CLI, pipeline)
 frontend/             Vite + React 18 + TypeScript + Tailwind web UI
-tests/                pytest suite (114 tests, fully offline)
+tests/                pytest suite (offline regression tests, fully offline)
 evals/                QA datasets for retrieval/answer evaluation
 data/samples/         bundled sample paper (RAG, 19 pages) for first ingest
 scripts/              mock_llm_server.py — offline OpenAI-compatible LLM stub
@@ -176,7 +180,7 @@ pyproject.toml        package metadata, dependencies, entry points, pytest/ruff 
 | `storage/qdrant_store.py` | Embedded-Qdrant wrapper (`qid()` chunk→ULID mapping, upsert/delete/search); single-process file lock — server *or* CLI holds `data/qdrant`, never both |
 | `ingestion/pipeline.py` | `IngestionPipeline.ingest_file`: parse → chunk → embed → Qdrant + BM25 JSON + SQLite + provenance index, with progress callbacks |
 
-### 3.2 `frontend/` — web UI (Vite 5 + React 18 + TypeScript 5 + Tailwind 3)
+### 3.2 `frontend/` — web UI (Vite 8 + React 18 + TypeScript 5 + Tailwind 4)
 
 `package.json` scripts: `dev` (Vite :5173, `/api` proxied to :8000), `build` (`tsc -b && vite build` → `dist/`, served by the API), `preview`.
 
@@ -213,7 +217,7 @@ pyproject.toml        package metadata, dependencies, entry points, pytest/ruff 
 | `src/pages/Jobs.tsx` | Background-job monitor (ingest/spec/implement/run/evaluate/experiment) with progress, auto-refresh while active |
 | `src/pages/Health.tsx` | Pipeline-component status (embedder/reranker/LLM/parser), fallback explanation, full configuration (advanced, copyable) |
 
-### 3.3 `tests/` — pytest suite (114 tests, offline, ~2 s)
+### 3.3 `tests/` — pytest suite (offline regression tests, offline, ~2 s)
 
 | File | Covers |
 |---|---|
@@ -272,7 +276,7 @@ All settings are `RESEARCHRAG_*` env vars (or `.env` keys); see `.env.example`. 
 
 - Parsing `pymupdf` · chunking `section_aware` (child 400 / parent 3000 tokens) · embeddings `BAAI/bge-base-en-v1.5` with hashing fallback
 - Retrieval dense/sparse top-50 · RRF `k=60`, weights 1.0/1.0 · reranker local MiniLM top-30→8 · evidence budget 4000 tokens with parent context
-- LLM `offline` · sandbox 120 s / 1024 MB / no network
+- LLM falls back to extractive answering without a key or local endpoint · execution timeout 120 s / POSIX memory cap 1024 MB / scrubbed environment. Network and filesystem access are **not isolated**; use an OS container for untrusted generated code.
 
 ## 7. CLI reference (`researchrag --help`)
 
@@ -299,7 +303,7 @@ Routers: `papers`, `search` (chat/retrieve), `specs`, `implementations`, `evalua
 
 ## 10. Invariants
 
-1. Provenance is never dropped (chunk block ids + page ranges, cited answer sentences, quoted EXPLICIT requirements — or explicit `unknown`).
+1. Provenance is retained (chunk block ids + page ranges, cited answer sentences, quoted EXPLICIT requirements — or explicit `unknown`). Generated answers still need source review.
 2. Pages are metadata, never chunk boundaries.
 3. Missing information is reported (open questions, `paper_value: null`, `null` config with comment, `insufficient` answers) — never fabricated.
 4. Generated code runs only in the sandbox.
