@@ -35,3 +35,7 @@ models/*.gguf
 
 # Browser verification output
 .playwright-mcp/
+
+# Personal launch film and editable composition; keep local only.
+video/
+assets/video/
