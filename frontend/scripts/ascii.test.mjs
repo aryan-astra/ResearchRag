@@ -15,11 +15,13 @@ for (const { id } of ART_OPTIONS) {
     assert.deepEqual(frame, asciiFrame(id, 0));
     for (const layer of [frame.base, frame.accent]) {
       const rows = layer.split('\n');
-      assert.equal(rows.length, 42);
-      assert.ok(rows.every(row => row.length === 96));
+      assert.equal(rows.length, 68);
+      assert.ok(rows.every(row => row.length === 144));
     }
     assert.ok(frame.base.trim().length > 100);
-    assert.match(frame.accent, /\\sum/);
+    assert.ok(frame.accent.replace(/\s/g, '').length > 1);
     assert.notEqual(frame.base, asciiFrame(id, 2).base);
+    assert.notEqual(frame.accent, asciiFrame(id, 2).accent, 'notation rotates with the surface');
+    assert.notEqual(frame.base, asciiFrame(id, 0, 144, 68, { x: 1, y: 0 }).base, 'pointer steers the form');
   });
 }
