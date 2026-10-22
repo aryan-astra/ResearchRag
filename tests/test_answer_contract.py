@@ -31,3 +31,11 @@ def test_a_cited_complete_answer_stays_generative():
     result=answerer._llm_answer('How many encoder layers?',package,None)
     assert result.mode=='generative'
     assert result.answer=='Six encoder layers [1].'
+
+
+def test_unknown_classification_text_is_hidden_without_inventing_confidence():
+    from researchrag.answering.prompts import strip_markers
+    clean,confidence,sufficiency=strip_markers('A sourced answer [1].\nCONFIDENCE: strong_inferred\nSUFFICIENCY: sufficient')
+    assert clean=='A sourced answer [1].'
+    assert confidence is None
+    assert sufficiency=='sufficient'

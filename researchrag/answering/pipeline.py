@@ -101,6 +101,8 @@ class AnsweringPipeline:
             cited = [int(index) for index in re.findall(r"\[(\d+)\]", clean)]
             if any(index < 1 or index > len(package.items) for index in cited):
                 raise LLMError("Response cites an unavailable passage")
+            if confidence == "external":
+                raise LLMError("Response relies on knowledge outside the paper")
             if not cited and sufficiency != "insufficient":
                 raise LLMError("Response contains no passage citations")
             paragraphs = [part.strip() for part in clean.split("\n\n") if part.strip()]
