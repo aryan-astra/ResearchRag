@@ -1,4 +1,5 @@
 """The offline safety checks for the optional model downloader."""
+
 import hashlib
 import io
 import zipfile
@@ -9,8 +10,11 @@ from scripts.local_model import download, extract_runtime, server_command
 
 
 def artifact(content):
-    return {"url": "https://example.test/model", "size": len(content),
-            "sha256": hashlib.sha256(content).hexdigest()}
+    return {
+        "url": "https://example.test/model",
+        "size": len(content),
+        "sha256": hashlib.sha256(content).hexdigest(),
+    }
 
 
 def test_download_verifies_before_replacing_lfs_pointer(tmp_path, monkeypatch):
