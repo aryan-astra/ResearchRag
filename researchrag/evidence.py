@@ -62,7 +62,6 @@ class EvidenceAssembler:
     ) -> EvidencePackage:
         t0 = time.perf_counter()
         items: list[EvidenceItem] = []
-        used = 0
         truncated = False
         seen_parents: dict[str, str] = {}  # parent_id -> header already emitted
         seen_chunks: set[str] = set()
@@ -73,7 +72,16 @@ class EvidenceAssembler:
                 continue
             seen_chunks.add(chunk.id)
 
-            parts: list[str] = []
+            previous = "\n\n".join(item.context_text for item in items)
+            prefix = previous + "\n\n" if previous else ""
+            marker = f"[{len(items) + 1}] "
+            item_text = marker + chunk.text
+            if self._counter.count(prefix + item_text) > self.max_tokens:
+                item_text = self._fit(prefix, item_text)
+                truncated = True
+            if len(item_text.strip()) <= len(marker.strip()):
+                break
+
             parent_text: str | None = None
             if self.use_parent_context and chunk.parent_id:
                 parent = (
@@ -84,23 +92,13 @@ class EvidenceAssembler:
                 if parent is not None:
                     if chunk.parent_id not in seen_parents:
                         header = self._parent_header(parent)
+                        expanded = item_text + "\n" + header + "\n" + parent.text
+                        fitted = self._fit(prefix, expanded)
+                        if len(fitted) > len(item_text) + len(header) + 2:
+                            item_text = fitted
                         seen_parents[chunk.parent_id] = header
-                        parts.append(header)
+                        truncated = truncated or len(fitted) < len(expanded)
                     parent_text = parent.text
-
-            parts.append(f"[{len(items) + 1}] {chunk.text}")
-            item_text = "\n".join(parts)
-            cost = self._counter.count(item_text)
-            if used + cost > self.max_tokens:
-                # degrade gracefully: drop parent framing, then truncate
-                item_text = f"[{len(items) + 1}] {chunk.text}"
-                parent_text = None
-                cost = self._counter.count(item_text)
-                if used + cost > self.max_tokens:
-                    head = item_text[: max(0, (self.max_tokens - used) * 4)]
-                    item_text = head
-                    truncated = True
-            used += cost
 
             items.append(
                 EvidenceItem(
@@ -121,7 +119,7 @@ class EvidenceAssembler:
                 )
             )
 
-        total = self._counter.count("\n".join(i.context_text for i in items))
+        total = self._counter.count("\n\n".join(i.context_text for i in items)) if items else 0
         log.info(
             "evidence: %d items, %d tokens (%.0fms, truncated=%s)",
             len(items), total, (time.perf_counter() - t0) * 1000, truncated,
@@ -137,3 +135,15 @@ class EvidenceAssembler:
     def _parent_header(parent: Chunk) -> str:
         section = parent.section_display
         return f"[context: {section or 'paper'}]"
+
+    def _fit(self, prefix: str, text: str) -> str:
+        if self._counter.count(prefix + text) <= self.max_tokens:
+            return text
+        low, high = 0, len(text)
+        while low < high:
+            mid = (low + high + 1) // 2
+            if self._counter.count(prefix + text[:mid]) <= self.max_tokens:
+                low = mid
+            else:
+                high = mid - 1
+        return text[:low].rstrip()

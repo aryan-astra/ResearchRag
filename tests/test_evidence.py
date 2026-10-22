@@ -72,10 +72,19 @@ def test_token_budget_enforced_and_truncation_flagged():
     cost2 = counter.count(f"[2] {t2}")
     assembler = EvidenceAssembler(max_tokens=cost1 + cost2, use_parent_context=False)
     pkg = assembler.assemble([_rc(c1), _rc(c2), _rc(c3)])
-    assert len(pkg.items) == 3            # third item is kept but degraded
+    assert len(pkg.items) <= 2
     assert pkg.truncated is True
     # the third item's context was cut to the remaining budget (≈ 0)
-    assert len(pkg.items[2].context_text) < len(t3)
+    assert pkg.total_tokens <= assembler.max_tokens
+    assert all(item.context_text.strip() for item in pkg.items)
+
+
+def test_budget_counts_unicode_and_separators():
+    chunks = [_rc(_chunk("p", str(i), "研究論文の数式を確認します。" * 30)) for i in range(5)]
+    for budget in (1, 10, 50, 100):
+        package = EvidenceAssembler(max_tokens=budget).assemble(chunks)
+        assert package.total_tokens <= budget
+        assert all(len(item.context_text.strip()) > 3 for item in package.items)
 
 
 def test_budget_fits_means_no_truncation():
