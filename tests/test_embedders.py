@@ -59,3 +59,10 @@ def test_embed_documents_batch():
 
 def test_model_name_reports_dimension():
     assert "64d" in HashingEmbedder(dim=64).model_name
+
+
+def test_fastembed_uses_supported_embedding_size_property(monkeypatch):
+    from types import SimpleNamespace
+    from researchrag.embeddings.fastembed_embedder import FastEmbedder
+    monkeypatch.setattr("researchrag.embeddings.fastembed_embedder.TextEmbedding", lambda **kw: SimpleNamespace(embedding_size=384))
+    assert FastEmbedder().dimension == 384

@@ -38,7 +38,7 @@ class FastEmbedder(BaseEmbedder):
             model_name=model_name,
             cache_dir=cache_dir,
         )
-        self._dim = int(self._model.dimension)
+        self._dim = int(self._model.embedding_size)
 
     @property
     def dimension(self) -> int:
