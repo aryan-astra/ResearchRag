@@ -9,29 +9,15 @@ from __future__ import annotations
 
 import re as _re
 
-SYSTEM_PROMPT = """You are a research-paper analyst. You answer questions strictly
-from the numbered evidence passages below, which were retrieved from ONE
-research paper.
+SYSTEM_PROMPT = """Answer the question using only the numbered passages from this research paper.
+Write a concise answer in one to three short paragraphs. Cite each factual claim with its passage number, for example: "The base model has six layers [1]."
+Do not repeat sentences. Do not invent missing details. If the passages do not answer the question, say "The retrieved passages do not specify this."
+End with these two lines, choosing one value on each line:
+CONFIDENCE: explicit | strongly_inferred | weakly_inferred | external | unknown
+SUFFICIENCY: sufficient | partial | insufficient
+Use explicit only for claims directly stated in a cited passage; use unknown and insufficient when the answer is missing.
 
-Rules:
-1. Ground every claim in the evidence. Cite the evidence index inline as
-   [1], [2], ... wherever you use a passage.
-2. If the evidence does not contain the answer, say exactly that — e.g.
-   "The paper does not specify X". Never invent values, names, or results.
-3. Distinguish what the paper explicitly states from what you are inferring.
-   Prefix inferences with "Inferred:" and be conservative.
-4. For numbers, use the paper's exact values and units. If a table is in
-   the evidence, read values from it; if a cell is missing, say so.
-5. Keep the answer focused and technical. Use short paragraphs or bullets.
-6. End with a one-line CONFIDENCE classification using exactly one of:
-   explicit | strongly_inferred | weakly_inferred | external | unknown
-   (explicit = stated in the evidence; strongly_inferred = a solid
-   inference; weakly_inferred = a guess; external = not from the paper;
-   unknown = not answerable from the paper).
-7. End with a one-line SUFFICIENCY classification: sufficient | partial |
-   insufficient.
-
-Evidence passages (numbered):
+Passages:
 {evidence}
 """
 

@@ -14,6 +14,7 @@ The answer always carries:
 from __future__ import annotations
 
 import logging
+import re
 import time
 
 from researchrag.answering.prompts import (
@@ -68,7 +69,7 @@ class AnsweringPipeline:
         t0 = time.perf_counter()
         retrieval, package = self.retrieve_evidence(question, paper_id, config)
 
-        if self.llm is None:
+        if self.llm is None or not package.items:
             ans = self.extractive.answer(question, package)
         else:
             ans = self._llm_answer(question, package, retrieval)
@@ -96,18 +97,26 @@ class AnsweringPipeline:
                 temperature=self.settings.llm_temperature,
                 max_tokens=self.settings.llm_max_tokens,
             )
+            clean, confidence, sufficiency = strip_markers(resp.text)
+            cited = [int(index) for index in re.findall(r"\[(\d+)\]", clean)]
+            if any(index < 1 or index > len(package.items) for index in cited):
+                raise LLMError("Response cites an unavailable passage")
+            if not cited and sufficiency != "insufficient":
+                raise LLMError("Response contains no passage citations")
+            paragraphs = [part.strip() for part in clean.split("\n\n") if part.strip()]
+            if resp.finish_reason == "length" or len(paragraphs) > 2 * len(set(paragraphs)):
+                raise LLMError("Response is incomplete or repetitive")
         except LLMError as e:
             log.warning("LLM answer failed (%s); using extractive fallback", e)
             ans = self.extractive.answer(question, package)
             ans.answer = (
                 ans.answer
-                + f" (LLM unavailable: {type(e).__name__}; extractive fallback used)"
+                + " (The model could not provide a complete cited answer; source excerpts are shown.)"
             )
             return ans
         llm_ms = (time.perf_counter() - t0) * 1000
         log.info("LLM answer in %.0fms", llm_ms)
 
-        clean, confidence, sufficiency = strip_markers(resp.text)
         return Answer(
             question=question,
             answer=clean,
