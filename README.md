@@ -1,33 +1,55 @@
 ![ResearchRAG — Every answer has a paper trail. Floating research pages on warm ivory paper.](assets/branding/researchrag-banner.png)
 
-# ResearchRAG
+<h1 align="center">ResearchRAG</h1>
 
-**Read the paper. Follow the evidence. Build something from it.**
+<p align="center"><strong>Read the paper. Follow the evidence. Build from what you learn.</strong></p>
 
-ResearchRAG is a local workspace for the beautifully curious. Bring a research paper, ask it a question, and follow the answer back to the original page. When you are ready to build, turn those passages into a reviewable specification and a runnable implementation scaffold.
+<p align="center">
+  Ask questions about a research paper, inspect the passages behind an answer,<br>
+  and turn its ideas into a reviewable implementation plan.
+</p>
 
-Start with source excerpts, connect your own API key, or run a small model on your CPU. Your papers and indexes live on your computer.
+<p align="center">
+  <a href="https://github.com/aryan-astra/ResearchRag/actions/workflows/checks.yml"><img src="https://github.com/aryan-astra/ResearchRag/actions/workflows/checks.yml/badge.svg" alt="Project checks"></a>
+  <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.11%2B-bb613c?style=flat&amp;labelColor=302c25" alt="Python 3.11+"></a>
+  <a href="frontend/package.json"><img src="https://img.shields.io/badge/Node.js-22.12%2B-766c59?style=flat&amp;labelColor=302c25" alt="Node.js 22.12+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-766c59?style=flat&amp;labelColor=302c25" alt="MIT license"></a>
+</p>
 
-[![Project checks](https://github.com/aryan-astra/ResearchRag/actions/workflows/checks.yml/badge.svg)](https://github.com/aryan-astra/ResearchRag/actions/workflows/checks.yml) [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-bb613c?style=flat&labelColor=302c25)](pyproject.toml) [![Node.js 22.12+](https://img.shields.io/badge/Node.js-22.12%2B-766c59?style=flat&labelColor=302c25)](frontend/package.json) [![License: MIT](https://img.shields.io/badge/License-MIT-766c59?style=flat&labelColor=302c25)](LICENSE)
+<p align="center">
+  <a href="#get-started">Get started</a> &nbsp;·&nbsp;
+  <a href="#the-workspace">The workspace</a> &nbsp;·&nbsp;
+  <a href="#choose-how-you-want-to-ask">Answer modes</a> &nbsp;·&nbsp;
+  <a href="#under-the-paper">How it works</a> &nbsp;·&nbsp;
+  <a href="#keep-exploring">Documentation</a>
+</p>
 
-[Get started](#get-started) · [The workspace](#a-little-less-searching-a-little-more-understanding) · [Answer modes](#choose-how-you-want-to-ask) · [Under the paper](#under-the-paper) · [Documentation](#keep-exploring)
+<p align="center"><sub>Local storage · Source citations · Optional API keys · CPU-only model support</sub></p>
 
-## A little less searching. A little more understanding.
+---
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/workspace-dark.png">
-  <img src="assets/screenshots/workspace-light.png" alt="The ResearchRAG workspace, with a paper library, direct PDF upload, and links to ask each paper a question." width="1440" height="1000">
-</picture>
+## The workspace
 
-*The real workspace, shown with classic research papers. Light and dark themes share the same warm, quiet reading space.*
+Keep your papers, questions, and source passages in one place. Start with cited excerpts, use your own API key, or connect a local model. Your library and indexes stay on your computer.
+
+<p align="center">
+  <a href="assets/screenshots/workspace-light.png">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/workspace-dark.png">
+      <img src="assets/screenshots/workspace-light.png" alt="ResearchRAG running on desktop: upload a PDF, browse the paper library, and ask questions with source citations." width="1440">
+    </picture>
+  </a>
+</p>
+
+<p align="center"><sub>Actual application screenshots · <a href="assets/screenshots/workspace-light.png">View light theme at full resolution</a> · <a href="assets/screenshots/workspace-dark.png">View dark theme at full resolution</a></sub></p>
 
 | Read closely | Ask with context | Build with evidence |
 | --- | --- | --- |
-| Inspect pages, sections, figures, tables, and extracted equation text. Keep the original PDF page within reach. | Search with semantic and keyword retrieval. Open the cited passages behind an answer. | Review quoted requirements, generate a scaffold, run checks, and compare reported metrics. |
+| Read the original pages alongside extracted sections, tables, figures, and equation text. | Ask a question, then open the cited passages to check the answer against the paper. | Review source-backed requirements, generate a scaffold, and inspect its validation results. |
 
 ## Get started
 
-You need **Python 3.11+**, **Node.js 22.12+**, and Git. Python 3.11 is the version used by CI with the pinned dependency lock. An API key and GPU are optional.
+Install **Python 3.11+**, **Node.js 22.12+**, and Git. Python 3.11 is used by CI with the pinned dependency lock. You can get started without an API key or GPU.
 
 <details open>
 <summary><strong>Windows · PowerShell</strong></summary>
@@ -105,13 +127,13 @@ The weights are about **1.28 GB**. On the tested 8 GB CPU laptop, the model proc
 
 [Model setup, measurements, and macOS/Linux instructions →](LOCAL_MODELS.md)
 
-## From reading to making
+## What you can do
 
-- **A paper library.** Upload, search, revisit, and import attributed classics from the field.
-- **An inspectable answer.** Page-level citations, source passages, retrieval scores, and an explicit excerpt fallback when generation cannot provide a usable response.
-- **A reviewable specification.** Requirements distinguish what is explicit, inferred, external, or unknown. Quotes and open questions stay visible.
-- **A place to experiment.** Generate implementation scaffolds, inspect files, run validation, and compare available metrics against paper values.
-- **A quiet interface.** Light and dark themes, focused and advanced views, readable notation, and motion that respects reduced-motion preferences.
+- **Build a reading library.** Upload your PDFs or import attributed classic papers, then return to your questions and sources.
+- **Inspect the evidence.** Open page-level citations, read retrieved passages, and examine search scores in the advanced view.
+- **Review before generating.** Specifications separate explicit statements from inferred, external, and unknown requirements, with source quotes and open questions.
+- **Test an implementation scaffold.** Inspect generated files, run validation, and compare available results with the metrics reported in the paper.
+- **Read in your preferred setting.** Switch between light and dark themes, focused and advanced views, and reduced-motion layouts.
 
 Scaffold validation checks that generated code can run; it does not establish a complete reproduction of a paper's method. Generated answers still need source review. The app is intended for local use, and its subprocess runner does not isolate the host filesystem or network—review generated code before running it.
 
