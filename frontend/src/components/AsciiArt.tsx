@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
-import { asciiFrame, type ArtKind } from "../ascii";
+import { asciiFrame, FORMULAS, type ArtKind } from "../ascii";
 
 export function AsciiArt({ kind, animated = true }: { kind: ArtKind; animated?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const base = useRef<HTMLPreElement>(null);
-  const accent = useRef<HTMLPreElement>(null);
+  const labels = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -16,7 +16,10 @@ export function AsciiArt({ kind, animated = true }: { kind: ArtKind; animated?: 
       pointer.y += (target.y - pointer.y) * .08;
       const frame = asciiFrame(kind, time, 144, 68, pointer);
       if (base.current) base.current.textContent = frame.base;
-      if (accent.current) accent.current.textContent = frame.accent;
+      frame.notation.forEach((note, index) => {
+        const label = labels.current?.children[index] as HTMLElement | undefined;
+        if (label) label.style.transform = `translate(${note.x * 6.92}px, ${note.y * 5.99}px)`;
+      });
       time += .05;
     };
     const sync = () => {
@@ -35,5 +38,5 @@ export function AsciiArt({ kind, animated = true }: { kind: ArtKind; animated?: 
     if (animated) window.addEventListener("pointermove", steer, { passive: true });
     return () => { clearInterval(timer); observer.disconnect(); reduced.removeEventListener("change", sync); document.removeEventListener("visibilitychange", sync); window.removeEventListener("pointermove", steer); };
   }, [kind, animated]);
-  return <div ref={root} className="ascii-art" aria-hidden="true"><pre ref={base} /><pre ref={accent} className="ascii-accent" /></div>;
+  return <div ref={root} className="ascii-art" aria-hidden="true"><pre ref={base} /><div ref={labels} className="ascii-notation">{FORMULAS.map(text => <code key={text}>{text}</code>)}</div></div>;
 }

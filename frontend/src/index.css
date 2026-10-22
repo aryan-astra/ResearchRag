@@ -253,7 +253,6 @@
   .research-hero-copy { position: relative; z-index: 1; }
   .home-hero-art { position: absolute; right: -140px; top: -175px; pointer-events: none; transform: rotate(-15deg); mask-image: linear-gradient(100deg,transparent 10%,black 50%); }
   .hero-art-controls { position: absolute; right: 4px; bottom: 4px; z-index: 2; display: flex; align-items: center; gap: 14px; font-size: 10px; color: rgb(var(--c-ink-mute)); }
-  .hero-art-controls button { width: 36px; height: 36px; border: 1px solid rgb(var(--c-line)); border-radius: 50%; background: rgb(var(--c-paper) / .9); }
   .hero-art-controls a:hover { color: rgb(var(--c-accent)); }
   .research-hero h1 { font-family: Georgia,"Times New Roman",serif; font-size: clamp(38px,4vw,58px); letter-spacing: -2px; font-weight: 400; }
   .research-hero h1 em { font-weight: 400; color: rgb(var(--c-ink-soft)); }
@@ -273,10 +272,9 @@
   .art-hero-action { display: inline-flex; gap: 20px; pointer-events: auto; font-size: 11px; background: rgb(var(--c-ink)); color: rgb(var(--c-paper)); border-radius: 999px; padding: 12px 20px; margin-top: 24px; }
   .ascii-art { position: relative; width: 692px; height: 599px; }
   .ascii-art pre { position: absolute; inset: 0; margin: 0; font-family: "Courier New",monospace; font-size: 8px; line-height: 8.8px; letter-spacing: 0; color: rgb(var(--c-ink) / .65); white-space: pre; overflow: hidden; user-select: none; font-variant-ligatures: none; }
-  .ascii-art pre.ascii-accent { color: rgb(var(--c-accent)); }
+  .ascii-notation code { position: absolute; top: 0; left: 0; color: rgb(var(--c-accent)); background: rgb(var(--c-paper) / .94); padding: 4px 7px; border-radius: 3px; font: 600 12px/1.4 "Courier New",monospace; white-space: nowrap; }
   .art-corner { position: absolute; right: -120px; top: -120px; transform: rotate(-12deg) scale(1.05); transform-origin: center; z-index: 1; mask-image: linear-gradient(100deg,transparent 0%,black 28%); pointer-events: none; }
   .art-caption { position: relative; z-index: 3; display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid rgb(var(--c-line)); padding: 16px 24px; font-size: 10px; background: rgb(var(--c-card) / .88); backdrop-filter: blur(8px); }
-  .art-caption button { min-height: 24px; text-decoration: underline; text-underline-offset: 4px; }
   .art-selection-heading { margin: 32px 0 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: baseline; }
   .art-selection-heading h2 { font-size: 14px; font-weight: 600; }
   .art-selection-heading p { font-size: 10px; color: rgb(var(--c-ink-mute)); }

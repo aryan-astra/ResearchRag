@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
 import { api } from "../api";
 import { useAsync, fmtDate } from "../hooks";
 import { ErrorNote, Skeleton, Badge } from "../components/ui";
@@ -8,13 +7,12 @@ import { AsciiArt } from "../components/AsciiArt";
 import { PaperJourney } from "../components/PaperJourney";
 
 export default function Dashboard() {
-  const [playing, setPlaying] = useState(true);
   const { data: papers, loading, error, reload } = useAsync(() => api.listPapers(), []);
   const ready = (papers ?? []).filter((p) => p.status === "ready");
   const recent = ready.slice(0, 4);
   return (
     <div className="overview-page">
-      <div className="overview-heading research-hero" data-enter><div className="research-hero-copy"><span className="workspace-eyebrow">For the beautifully curious.</span><h1>Every paper holds<br /><em>a new perspective.</em></h1><p>Bring a question. Find the evidence.<br className="hidden sm:block" /> Make something of what you discover.</p></div><div className="home-hero-art"><AsciiArt kind="torus" animated={playing} /></div><div className="hero-art-controls"><Link to="/sample-art">Explore the forms</Link><button type="button" aria-label={playing ? "Pause artwork" : "Play artwork"} aria-pressed={!playing} onClick={() => setPlaying(p => !p)}>{playing ? "Ⅱ" : "▷"}</button></div></div>
+      <div className="overview-heading research-hero" data-enter><div className="research-hero-copy"><span className="workspace-eyebrow">For the beautifully curious.</span><h1>Every paper holds<br /><em>a new perspective.</em></h1><p>Bring a question. Find the evidence.<br className="hidden sm:block" /> Make something of what you discover.</p></div><div className="home-hero-art"><AsciiArt kind="folio" /></div><div className="hero-art-controls"><Link to="/sample-art">Explore the forms ↗</Link></div></div>
       <div data-enter><UploadPaper onComplete={reload} compact /></div>
       <section className="recent-section" data-enter>
         <div className="section-heading"><h2>Your library <span>{ready.length}</span></h2><Link to="/papers">View all papers <span aria-hidden>↗</span></Link></div>

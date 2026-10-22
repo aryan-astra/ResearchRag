@@ -1,6 +1,7 @@
-export type ArtKind = "torus" | "knot" | "sphere" | "folio" | "wave";
+export type ArtKind = "helix" | "knot" | "sphere" | "folio" | "wave";
+export const FORMULAS = [String.raw`\nabla_\theta \mathcal{L}`, String.raw`p(y \mid x)`, String.raw`\sum_{i=1}^{n} w_i x_i`, String.raw`\int_a^b f(x)\,dx`];
 export const ART_OPTIONS: { id: ArtKind; name: string; description: string }[] = [
-  { id: "torus", name: "Continuum", description: "A sculptural ring, with notation turning through its surface." },
+  { id: "helix", name: "A thread of discovery", description: "A rising ribbon, tracing the shape of a new idea." },
   { id: "knot", name: "Connections", description: "One continuous thread, woven into a trefoil knot." },
   { id: "sphere", name: "A world of ideas", description: "A globe of characters, illuminated from one side." },
   { id: "folio", name: "The unfolding page", description: "A sheet of research, bending into a new shape." },
@@ -9,9 +10,9 @@ export const ART_OPTIONS: { id: ArtKind; name: string; description: string }[] =
 type Point = [number, number, number];
 const TAU = Math.PI * 2;
 function surface(kind: ArtKind, u: number, v: number, time: number): Point {
-  if (kind === "torus") {
-    const r = 1.5 + .66 * Math.cos(v);
-    return [r * Math.cos(u), r * Math.sin(u), .66 * Math.sin(v)];
+  if (kind === "helix") {
+    const r = .85 + v / TAU * .7;
+    return [r * Math.cos(u * 2), (u / Math.PI - 1) * 1.8, r * Math.sin(u * 2)];
   }
   if (kind === "sphere") return [2 * Math.cos(u) * Math.sin(v), 2 * Math.sin(u) * Math.sin(v), 2 * Math.cos(v)];
   if (kind === "knot") {
@@ -21,11 +22,11 @@ function surface(kind: ArtKind, u: number, v: number, time: number): Point {
   const x = (u / Math.PI - 1) * 2.1, y = (v / Math.PI - 1) * 1.7;
   return [x, y, kind === "folio" ? .24 * x * x + .22 * Math.sin(y * 2 + time * .45) : .42 * Math.sin(x * 2 + time * .7) * Math.cos(y * 2 - time * .25)];
 }
-/** Surface sampling and a depth buffer keep the sculpture and its notation in one space. */
+/** Depth-buffered characters with screen-facing notation anchored to the turning form. */
 export function asciiFrame(kind: ArtKind, time: number, width = 144, height = 68, pointer = { x: 0, y: 0 }) {
   const cells = width * height;
   const depths = new Float32Array(cells).fill(-Infinity);
-  const base = new Array<string>(cells).fill(" "), accent = new Array<string>(cells).fill(" ");
+  const base = new Array<string>(cells).fill(" ");
   const a = .45 + Math.sin(time * .25) * .4 + pointer.y * .3, b = -.25 + Math.sin(time * .18) * .4 + pointer.x * .35;
   const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
   const cc = Math.cos(time * .17), sc = Math.sin(time * .17);
@@ -54,17 +55,11 @@ export function asciiFrame(kind: ArtKind, time: number, width = 144, height = 68
     depths[i] = depth;
     base[i] = ramp[Math.floor(light * (ramp.length - 1))];
   }
-  // Surface coordinates move every glyph with the object, including when it turns out of view.
-  ["\\sum", "\\alpha", "E=mc^2", "\\nabla", "\\int", "\\theta"].forEach((phrase, patch) => {
-    const u = .35 + patch * .95, v = kind === "sphere" ? .6 + (patch % 3) * .7 : .75 + (patch % 3) * 1.9;
-    for (let letter = 0; letter < phrase.length; letter++) {
-      const { col, row, depth } = project(surface(kind, u + letter * .068, v, time));
-      if (col < 0 || col >= width || row < 0 || row >= height) continue;
-      const i = row * width + col;
-      if (depth < depths[i] - .18 || depths[i] === -Infinity) continue;
-      base[i] = " "; accent[i] = phrase[letter];
-    }
+  // Keep complete expressions facing the reader; separate bands prevent overlapping labels.
+  const notation = FORMULAS.map((text, index) => {
+    const { col, row } = project(surface(kind, .7 + index * 1.4, kind === "sphere" ? 1.2 : 2.4, time));
+    return { text, x: Math.max(24, Math.min(62, col / width * 100)), y: 18 + index * 19 + Math.max(-5, Math.min(5, (row / height - .5) * 20)) };
   });
   const lines = (chars: string[]) => Array.from({ length: height }, (_, row) => chars.slice(row * width, (row + 1) * width).join("")).join("\n");
-  return { base: lines(base), accent: lines(accent) };
+  return { base: lines(base), notation };
 }
