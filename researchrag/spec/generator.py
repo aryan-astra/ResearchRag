@@ -128,7 +128,7 @@ class SpecGenerator:
             [
                 LLMMessage(
                     role="system",
-                    content=SPEC_PROMPT.format(evidence="\n\n".join(parts)),
+                    content=SPEC_PROMPT.replace("{evidence}", "\n\n".join(parts)),
                 ),
                 LLMMessage(role="user", content="Produce the JSON specification."),
             ],

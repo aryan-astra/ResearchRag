@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from researchrag.api.deps import get_ctx, require_paper, run_job
 from researchrag.spec.evidence import spec_evidence
@@ -13,7 +13,7 @@ router = APIRouter(tags=["specs"])
 
 
 class GenerateSpecRequest(BaseModel):
-    max_evidence_chunks: int = 60
+    max_evidence_chunks: int = Field(default=60, ge=1, le=100)
 
 
 def _generate_spec(ctx, paper_id: str, limit: int) -> dict:
