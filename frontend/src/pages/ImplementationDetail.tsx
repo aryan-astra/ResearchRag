@@ -118,13 +118,13 @@ export default function ImplementationDetail() {
             ) : (
               "—"
             )}
-            . Generated code is untrusted: it runs only in the sandbox (time + memory limits,
-            scrubbed env).
+            . Review generated files before running them. Execution uses a local subprocess
+            with a timeout and scrubbed environment.
           </>
         }
         right={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-ink-faint mr-1">sandbox run:</span>
+            <span className="text-xs text-ink-faint mr-1">Run locally:</span>
             {RUN_KINDS.map((k) => (
               <Button
                 key={k}
@@ -143,7 +143,7 @@ export default function ImplementationDetail() {
       {runJobId && !runDone && (
         <Card className="mb-5 animate-rise">
           <div className="text-sm">
-            Running <strong>{runJob?.kind}</strong> in sandbox… {runJob?.detail ?? ""}
+            Running <strong>{runJob?.kind}</strong> locally… {runJob?.detail ?? ""}
           </div>
           <div className="h-1 bg-panel rounded-full mt-3 overflow-hidden border border-line/60">
             <div className="h-full bg-accent transition-all duration-300" style={{ width: `${(runJob?.progress ?? .08) * 100}%` }} />
@@ -249,16 +249,16 @@ export default function ImplementationDetail() {
           </Card>
         </div>
 
-        <div>
+        <div className="min-w-0">
           {fileErr ? (
             <ErrorNote message={fileErr} />
           ) : fileLoading ? (
             <Loading label="Loading file…" />
           ) : file ? (
             <Card pad={false} className="animate-fadein">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-line">
-                <code className="font-mono text-xs text-ink-soft">{file.path}</code>
-                <span className="text-[11px] text-ink-faint">{file.content.length} chars</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b border-line">
+                <code className="min-w-0 break-all font-mono text-xs text-ink-soft">{file.path}</code>
+                <span className="shrink-0 text-[11px] text-ink-faint">{file.content.length} chars</span>
               </div>
               <Code>{file.content}</Code>
             </Card>
@@ -271,7 +271,7 @@ export default function ImplementationDetail() {
       <div className="mt-8">
         <h2 className="font-display text-xl mb-3">Runs</h2>
         {(runs ?? []).length === 0 ? (
-          <Empty title="No sandbox runs yet" hint="Use smoke / tests / train above." />
+          <Empty title="No local runs yet" hint="Use smoke / tests / train above." />
         ) : (
           <Card pad={false}>
             <Table

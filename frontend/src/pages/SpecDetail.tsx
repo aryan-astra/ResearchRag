@@ -64,7 +64,7 @@ function SpecView({
 
   const shown = spec.requirements.filter((r) => {
     if (filter === "all") return true;
-    if (filter === "EXPLICIT" || filter === "INFERRED") return r.source === filter;
+    if (filter === "EXPLICIT" || filter === "INFERRED") return r.source.toUpperCase() === filter;
     return statusOf(r.req_id, r.status as ReqStatus) === filter;
   });
 
@@ -123,8 +123,8 @@ function SpecView({
         </Card>
       )}
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] uppercase tracking-[0.16em] text-ink-faint font-medium mr-1">
             {counts.total} requirements · {nAccepted} feeding codegen
           </span>
@@ -158,8 +158,8 @@ function SpecView({
       ) : (
         <ul className="space-y-3">
           {shown.map((r) => (
-            <Card key={r.id} className="animate-rise">
-              <div className="flex items-start justify-between gap-6">
+            <li key={r.id}><Card className="animate-rise">
+              <div className="flex flex-col md:flex-row items-start justify-between gap-6">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="font-mono text-xs text-ink-faint">{r.req_id}</span>
@@ -210,7 +210,7 @@ function SpecView({
                   {r.notes && <span className="text-[11px] text-ink-faint max-w-[12rem] text-right">{r.notes}</span>}
                 </div>
               </div>
-            </Card>
+            </Card></li>
           ))}
         </ul>
       )}

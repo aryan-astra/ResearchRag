@@ -336,9 +336,9 @@ export function Prose({ children }: { children: string }) {
 
 export function Breadcrumbs({ items }: { items: Array<{ label: string; to?: string }> }) {
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-ink-faint mb-4">
+    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs text-ink-faint mb-4">
       {items.map((it, i) => (
-        <span key={i} className="flex items-center gap-1.5">
+        <span key={i} className="flex max-w-full min-w-0 items-center gap-1.5 [overflow-wrap:anywhere]">
           {i > 0 && <span aria-hidden>/</span>}
           {it.to ? (
             <Link to={it.to} className="hover:text-ink transition-colors">
