@@ -66,5 +66,5 @@ def update_requirement(
     )
     if not rows:
         raise HTTPException(status_code=404, detail="Requirement not found")
-    ctx.db.update_requirement_status(req_id, status, notes)
+    ctx.db.update_requirement_status(spec_id, req_id, status, notes)
     return {"ok": True, "req_id": req_id, "status": status}

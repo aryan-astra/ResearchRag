@@ -496,17 +496,17 @@ class Database:
         return [dict(r) for r in rows]
 
     def update_requirement_status(
-        self, req_id: str, status: str, notes: str | None = None
+        self, spec_id: str, req_id: str, status: str, notes: str | None = None
     ) -> None:
         if notes is not None:
             self.execute(
-                "UPDATE spec_requirements SET status = ?, notes = ? WHERE req_id = ?",
-                (status, notes, req_id),
+                "UPDATE spec_requirements SET status = ?, notes = ? WHERE spec_id = ? AND req_id = ?",
+                (status, notes, spec_id, req_id),
             )
         else:
             self.execute(
-                "UPDATE spec_requirements SET status = ? WHERE req_id = ?",
-                (status, req_id),
+                "UPDATE spec_requirements SET status = ? WHERE spec_id = ? AND req_id = ?",
+                (status, spec_id, req_id),
             )
 
     # ------------------------------------------------------------------
