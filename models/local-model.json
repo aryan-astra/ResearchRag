@@ -1,13 +1,14 @@
 {
   "model": {
-    "name": "Qwen3.5-0.8B-Q4_K_M.gguf",
+    "name": "Qwen3.5-2B-Q4_K_M.gguf",
+    "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-Q4_K_M.gguf",
+    "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
+    "size": 1280835840,
     "alias": "researchrag-local",
-    "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
-    "quantizer": "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF",
-    "url": "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0/Qwen3.5-0.8B-Q4_K_M.gguf",
-    "sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517",
-    "size": 532517120,
-    "license": "Apache-2.0"
+    "source": "https://huggingface.co/Qwen/Qwen3.5-2B",
+    "quantizer": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF",
+    "license": "Apache-2.0",
+    "release_url": "https://github.com/aryan-astra/ResearchRag/releases/download/local-model-qwen3.5-2b-q4/Qwen3.5-2B-Q4_K_M.gguf"
   },
   "runtime": {
     "name": "llama-b11669-bin-win-cpu-x64.zip",
