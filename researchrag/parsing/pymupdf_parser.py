@@ -527,6 +527,8 @@ class PymupdfParser(BaseParser):
         ]
         if not candidates:
             return []
+        largest = max(t.size for t in candidates)
+        candidates = [t for t in candidates if t.size >= largest * .9]
         candidates.sort(key=lambda t: t.bbox[1])
         top = candidates[0]
         run = [top]
@@ -642,7 +644,7 @@ class PymupdfParser(BaseParser):
                     if abs(bcx - midx) < 40 or bwidth > page_w * 0.55:
                         abstract_parts.append(b.text)
                 else:
-                    in_col = (b.bbox[0] + b.bbox[2]) / 2 < midx == (abs_cx < midx)
+                    in_col = ((b.bbox[0] + b.bbox[2]) / 2 < midx) == (abs_cx < midx)
                     if in_col:
                         abstract_parts.append(b.text)
 
@@ -654,7 +656,7 @@ class PymupdfParser(BaseParser):
                     break
         paper.authors = self._parse_authors(author_lines)
         if abstract_parts:
-            paper.abstract = " ".join(sorted(abstract_parts))
+            paper.abstract = " ".join(abstract_parts)
         paper.metadata["block_counts"] = self._count_types(paper)
 
     @staticmethod

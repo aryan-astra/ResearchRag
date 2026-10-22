@@ -174,3 +174,21 @@ def test_embedding_dimension_change_preserves_index():
     with pytest.raises(ValueError, match="preserved"):
         store.ensure_collection(384)
     store.client.delete_collection.assert_not_called()
+
+
+def test_title_uses_largest_type_instead_of_earlier_permission_notice():
+    parser=PymupdfParser()
+    item=parser._TextItem
+    notice=item('Permission is granted to reproduce this paper.',[50,70,550,100],12,False,True,False)
+    title=item('Attention Is All You Need',[60,150,540,175],17,True,True,False)
+    assert parser._extract_title_items([notice,title],10,792)==[title]
+
+
+def test_abstract_preserves_order_within_its_column():
+    from researchrag.models.document import Block,BlockType,Page,Paper
+    def block(i,text,x,y,kind=BlockType.PARAGRAPH):
+        return Block(id=str(i),paper_id='p',block_type=kind,text=text,page=1,order=i,bbox=[x,y,x+200,y+15])
+    blocks=[block(0,'Abstract',40,250,BlockType.HEADING),block(1,'Zebra comes first.',40,280),block(2,'Apples come second.',40,310),block(3,'Other column text.',350,280),block(4,'1 Introduction',40,350,BlockType.HEADING)]
+    paper=Paper(id='p',filename='p.pdf',page_count=1,pages=[Page(number=1,width=612,height=792,blocks=blocks)])
+    PymupdfParser()._fill_metadata(paper)
+    assert paper.abstract=='Zebra comes first. Apples come second.'
