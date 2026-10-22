@@ -26,12 +26,14 @@ export function asciiFrame(kind: ArtKind, time: number, width = 144, height = 68
   const cells = width * height;
   const depths = new Float32Array(cells).fill(-Infinity);
   const base = new Array<string>(cells).fill(" "), accent = new Array<string>(cells).fill(" ");
-  const a = .65 + time * .21 + pointer.y * .35, b = -.35 + time * .15 + pointer.x * .4;
+  const a = .45 + Math.sin(time * .25) * .4 + pointer.y * .3, b = -.25 + Math.sin(time * .18) * .4 + pointer.x * .35;
   const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+  const cc = Math.cos(time * .17), sc = Math.sin(time * .17);
   const scale = Math.min(width * .215, height * .38);
   const rotate = ([x, y, z]: Point): Point => {
-    const rx = x * cb + z * sb, rz = z * cb - x * sb;
-    return [rx, y * ca - rz * sa, y * sa + rz * ca];
+    const sx = x * cc - y * sc, sy = x * sc + y * cc;
+    const rx = sx * cb + z * sb, rz = z * cb - sx * sb;
+    return [rx, sy * ca - rz * sa, sy * sa + rz * ca];
   };
   const project = (point: Point) => {
     const [x, y, depth] = rotate(point), perspective = 7 / (7 - depth);
